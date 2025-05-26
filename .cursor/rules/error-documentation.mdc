@@ -1,0 +1,50 @@
+---
+description: Document major failure points in this project and they were solved.  To be filled by AI.
+globs:
+alwaysApply: false
+---
+---
+description: Document major failure points in this project and they were solved.  To be filled by AI.
+globs:
+---
+
+# Error Documentation
+
+このファイルは、EcoFlow Cloud Home Assistantプロジェクトで発生した主要なエラーと解決策を記録する。
+
+## 使用方法
+
+- プロジェクト開発中に発生した重要なエラーや問題を記録する
+- 解決策と影響を明確に記載する
+- 同じ問題の再発防止に役立てる
+- 新しいエラーは以下のフォーマットで追加する
+
+## エラー記録フォーマット
+
+```markdown
+## [日付] エラータイトル
+
+### 問題
+- エラーの詳細な説明
+- 発生条件や環境
+
+### 原因
+- エラーの根本原因
+- 技術的な背景
+
+### 解決策
+- 実施した解決方法
+- コード変更の詳細
+
+### 影響
+- 解決による効果
+- 関連する改善点
+```
+
+---
+
+## 記録開始
+
+このプロジェクト固有のエラーと解決策をここに記録していく。
+
+<!-- 新しいエラー記録はここに追加 -->

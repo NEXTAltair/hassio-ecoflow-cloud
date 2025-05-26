@@ -1,0 +1,333 @@
+---
+description: directory structure to follow
+globs:
+alwaysApply: false
+---
+---
+description: the top-level directory structure for the project
+globs:
+alwaysApply: false
+---
+# Directory Structure
+
+## 1. トップレベル構造
+
+```mermaid
+flowchart TD
+    Root[Project Root]
+    Root --> Docs[docs/]
+    Root --> Tasks[tasks/]
+    Root --> CursorRules[.cursor/rules/]
+    Root --> RooRules[.roo/]
+    Root --> CustomComponents[custom_components/]
+    Root --> Core[core/]
+    Root --> Diag[diag/]
+    Root --> Docs4AI[docs_4ai/]
+    Root --> ConfigFiles[Config Files]
+
+    subgraph ConfigFiles [Config Files]
+        direction LR
+        DebugInit[debug.init.py]
+        HACS[hacs.json]
+        Main[main.py]
+        PyProject[pyproject.toml]
+        README[README.md]
+        Requirements[requirements.txt]
+        UVLock[uv.lock]
+    end
+
+    subgraph CustomComponents [custom_components/]
+        EcoflowCloud[ecoflow_cloud/]
+    end
+
+    subgraph EcoflowCloud [ecoflow_cloud/]
+        direction TB
+        Init[__init__.py]
+        Button[button.py]
+        ConfigFlow[config_flow.py]
+        Diagnostics[diagnostics.py]
+        Manifest[manifest.json]
+        Number[number.py]
+        Recorder[recorder.py]
+        Select[select.py]
+        Sensor[sensor.py]
+        Switch[switch.py]
+        API[api/]
+        Devices[devices/]
+        Entities[entities/]
+        Translations[translations/]
+    end
+
+    subgraph API [api/]
+        direction LR
+        APIInit[__init__.py]
+        EcoflowMQTT[ecoflow_mqtt.py]
+        PrivateAPI[private_api.py]
+        PublicAPI[public_api.py]
+    end
+
+    subgraph Devices [devices/]
+        direction TB
+        DevicesInit[__init__.py]
+        DevicesConst[const.py]
+        DataHolder[data_holder.py]
+        Registry[registry.py]
+        Internal[internal/]
+        Public[public/]
+    end
+
+    subgraph Internal [internal/]
+        direction LR
+        InternalInit[__init__.py]
+        DeltaMax[delta_max.py]
+        DeltaMini[delta_mini.py]
+        DeltaPro[delta_pro.py]
+        Delta2Max[delta2_max.py]
+        Delta2[delta2.py]
+        Glacier[glacier.py]
+        Powerstream[powerstream.py]
+        RiverMax[river_max.py]
+        RiverMini[river_mini.py]
+        RiverPro[river_pro.py]
+        River2Max[river2_max.py]
+        River2Pro[river2_pro.py]
+        River2[river2.py]
+        Wave2[wave2.py]
+        Proto[proto/]
+    end
+
+    subgraph Proto [proto/]
+        direction LR
+        ProtoInit[__init__.py]
+        EcopacketPB2[ecopacket_pb2.py]
+        EcopacketProto[ecopacket.proto]
+        PlatformPB2[platform_pb2.py]
+        PlatformProto[platform.proto]
+        PowerstreamPB2[powerstream_pb2.py]
+        PowerstreamProto[powerstream.proto]
+    end
+
+    subgraph Public [public/]
+        direction LR
+        PublicInit[__init__.py]
+        DataBridge[data_bridge.py]
+        DeltaPro3[delta_pro_3.py]
+        PublicDeltaPro[delta_pro.py]
+        PublicDelta2Max[delta2_max.py]
+        PublicDelta2[delta2.py]
+        Powerkit[powerkit.py]
+        PublicPowerstream[powerstream.py]
+        PublicRiver2Max[river2_max.py]
+        PublicRiver2Pro[river2_pro.py]
+        PublicRiver2[river2.py]
+        SmartPlug[smart_plug.py]
+    end
+
+    subgraph Entities [entities/]
+        direction LR
+        EntitiesInit[__init__.py]
+    end
+
+    subgraph Translations [translations/]
+        direction LR
+        DE[de.json]
+        EN[en.json]
+        FR[fr.json]
+        PL[pl.json]
+        PTPT[pt-PT.json]
+        UKUA[uk_UA.json]
+    end
+
+    subgraph Core [core/]
+        direction LR
+        CoreFiles[Home Assistant Core Files]
+        CoreNote[Git Submodule]
+    end
+
+    subgraph Diag [diag/]
+        direction LR
+        Delta2MaxDiag[delta_2_max.json]
+        DeltaMiniDiag[delta_mini.json]
+        DeltaProDiag[delta_pro.json]
+        Delta2Diag[delta2.json]
+        PowerstreamDiag[powerstream.json]
+        River2MaxDiag[river_2_max.json]
+        RiverMaxDiag[river_max.json]
+        RiverMiniDiag[river_mini.json]
+        RiverProDiag[river_pro.json]
+    end
+
+    subgraph Docs [docs/]
+        direction TB
+        ContributionMD[Contribution.md]
+        GenPY[gen.py]
+        IntegrationMD[integration.md]
+        DevicesDir[devices/]
+    end
+
+    subgraph DevicesDir [devices/]
+        direction LR
+        DeltaDevices[DELTA_*.md]
+        RiverDevices[RIVER_*.md]
+        OtherDevices[Other Device Docs]
+    end
+
+    subgraph Docs4AI [docs_4ai/]
+        direction LR
+        ArchitectureMD[architecture.md]
+        ProductReqMD[product_requirement_docs.md]
+        RulesMD[rules.md]
+        TechnicalMD[technical.md]
+    end
+
+    subgraph Tasks [tasks/]
+        direction LR
+        TasksPlan[tasks_plan.md]
+        ActiveContext[active_context.md]
+        RFC[rfc/]
+    end
+```
+
+## 2. ディレクトリ構成ルール (AI向け指示)
+
+本ドキュメントは、EcoFlow Cloud Home Assistantカスタムコンポーネントのディレクトリ構成に関するルールを定義する。AI はファイルやディレクトリを作成･移動する際に、以下の指示に従うこと。
+
+### 2.1. 基本ルール
+
+- ディレクトリ名、ファイル名には、その役割を簡潔に示す英語の小文字とアンダースコア (`_`) を使用する。
+- Home Assistantの慣例に従い、エンティティタイプごとにファイルを分割する。
+
+### 2.2. プロジェクトルート構成
+
+#### 設定ファイル
+- **`pyproject.toml`**: Python プロジェクト設定
+- **`requirements.txt`**: Python 依存関係
+- **`uv.lock`**: UV パッケージマネージャーのロックファイル
+- **`hacs.json`**: HACS (Home Assistant Community Store) 設定
+- **`main.py`**: メインエントリーポイント
+- **`debug.init.py`**: デバッグ初期化スクリプト
+- **`README.md`**: プロジェクト説明
+
+### 2.3. `custom_components/ecoflow_cloud/` ディレクトリ構成
+
+本ディレクトリは、EcoFlowデバイス用のHome Assistantカスタムコンポーネントである。
+
+#### 2.3.1. ルートレベルファイル
+- **`__init__.py`**: コンポーネントの初期化とセットアップ
+- **`manifest.json`**: コンポーネントのメタデータと依存関係
+- **`config_flow.py`**: 設定フローとオプションフロー
+- **`diagnostics.py`**: 診断情報の提供
+- **`recorder.py`**: Home Assistant Recorderとの統合
+
+#### 2.3.2. エンティティファイル
+- **`sensor.py`**: センサーエンティティ（バッテリーレベル、電力等）
+- **`switch.py`**: スイッチエンティティ（AC出力、DC出力等）
+- **`number.py`**: 数値入力エンティティ（充電レベル、電力制限等）
+- **`select.py`**: 選択エンティティ（タイムアウト設定等）
+- **`button.py`**: ボタンエンティティ（リセット、再起動等）
+
+#### 2.3.3. サブディレクトリ
+
+##### `api/` - API層
+- **`__init__.py`**: API層の初期化
+- **`ecoflow_mqtt.py`**: MQTT通信の実装
+- **`private_api.py`**: プライベートAPI（内部デバイス用）
+- **`public_api.py`**: パブリックAPI（公開デバイス用）
+
+##### `devices/` - デバイス管理層
+- **`__init__.py`**: デバイス層の初期化
+- **`const.py`**: デバイス関連の定数
+- **`data_holder.py`**: デバイスデータの保持
+- **`registry.py`**: デバイス登録管理
+
+###### `devices/internal/` - 内部デバイス実装
+EcoFlowの内部MQTT APIを使用するデバイス:
+- **DELTAシリーズ**: `delta_max.py`, `delta_mini.py`, `delta_pro.py`, `delta2_max.py`, `delta2.py`
+- **RIVERシリーズ**: `river_max.py`, `river_mini.py`, `river_pro.py`, `river2_max.py`, `river2_pro.py`, `river2.py`
+- **その他**: `powerstream.py`, `glacier.py`, `wave2.py`
+- **`proto/`**: Protocol Buffersファイル（`.proto`と生成された`_pb2.py`）
+  - `ecopacket.proto` / `ecopacket_pb2.py`
+  - `platform.proto` / `platform_pb2.py`
+  - `powerstream.proto` / `powerstream_pb2.py`
+
+###### `devices/public/` - 公開デバイス実装
+EcoFlowの公開APIを使用するデバイス:
+- **DELTAシリーズ**: `delta_pro_3.py`, `delta_pro.py`, `delta2_max.py`, `delta2.py`
+- **RIVERシリーズ**: `river2_max.py`, `river2_pro.py`, `river2.py`
+- **その他**: `powerstream.py`, `powerkit.py`, `smart_plug.py`
+- **`data_bridge.py`**: データブリッジ機能
+
+##### `entities/` - 共通エンティティ
+- **`__init__.py`**: 共通エンティティクラス
+
+##### `translations/` - 多言語対応
+- **`de.json`**: ドイツ語
+- **`en.json`**: 英語
+- **`fr.json`**: フランス語
+- **`pl.json`**: ポーランド語
+- **`pt-PT.json`**: ポルトガル語（ポルトガル）
+- **`uk_UA.json`**: ウクライナ語
+
+### 2.4. その他のディレクトリ
+
+#### `core/` - Home Assistant Core
+- Home Assistant Coreのgitサブモジュール
+- 開発・テスト用
+
+#### `diag/` - 診断ファイル
+各デバイスの診断データサンプル（JSON形式）:
+- `delta_2_max.json`, `delta_mini.json`, `delta_pro.json`, `delta2.json`
+- `river_2_max.json`, `river_max.json`, `river_mini.json`, `river_pro.json`
+- `powerstream.json`
+
+#### `docs/` - ドキュメント
+- **`Contribution.md`**: 貢献ガイド
+- **`integration.md`**: 統合ガイド
+- **`gen.py`**: ドキュメント生成スクリプト
+- **`devices/`**: 各デバイスの詳細ドキュメント
+  - DELTAシリーズ: `DELTA_*.md`
+  - RIVERシリーズ: `RIVER_*.md`
+  - その他: `PowerStream*.md`, `GLACIER.md`, `WAVE_2.md`, `Smart_Plug*.md`等
+
+#### `docs_4ai/` - AI用ドキュメント
+- **`architecture.md`**: システムアーキテクチャ
+- **`product_requirement_docs.md`**: 製品要求仕様
+- **`technical.md`**: 技術仕様
+- **`rules.md`**: 開発ルール
+
+#### `tasks/` - タスク管理
+- **`tasks_plan.md`**: タスク計画
+- **`active_context.md`**: 現在のコンテキスト
+- **`rfc/`**: RFC（Request for Comments）
+
+### 2.5. ファイル作成・変更時の指針
+
+#### 新しいデバイス追加時
+1. **デバイスタイプの判定**: 内部API用か公開API用かを判定
+2. **適切なディレクトリ選択**: `devices/internal/` または `devices/public/`
+3. **ファイル命名**: デバイス名を小文字+アンダースコアで命名
+4. **エンティティ実装**: 必要なエンティティを各エンティティファイルに追加
+5. **ドキュメント作成**: `docs/devices/`に対応ドキュメント作成
+6. **診断ファイル**: `diag/`に診断データサンプル追加
+
+#### Protocol Buffers更新時
+1. **`.proto`ファイル更新**: `devices/internal/proto/`内の該当ファイル
+2. **Python生成**: `protoc`コマンドで`_pb2.py`ファイル生成
+3. **インポート更新**: 関連デバイスファイルのインポート文更新
+
+#### 翻訳追加時
+1. **言語コード確認**: ISO 639-1準拠の言語コード使用
+2. **JSONファイル作成**: `translations/`ディレクトリに追加
+3. **キー統一**: 既存翻訳ファイルと同じキー構造を維持
+
+#### エンティティ追加時
+1. **エンティティタイプ判定**: sensor, switch, number, select, button
+2. **適切なファイル選択**: 対応するエンティティファイルに実装
+3. **共通機能**: 必要に応じて`entities/`に共通クラス追加
+
+**指示:**
+- 新しいEcoFlowデバイスを追加する場合、デバイスの特性（内部API/公開API）に応じて適切なディレクトリに配置する
+- エンティティの追加時は、Home Assistantの慣例に従い、エンティティタイプごとに適切なファイルに実装する
+- Protocol Buffersファイルの変更時は、必ず対応するPythonファイルも更新する
+- 多言語対応を考慮し、新しい文字列は翻訳ファイルに追加する
+- 診断機能のため、新デバイス追加時は対応する診断ファイルも作成する
