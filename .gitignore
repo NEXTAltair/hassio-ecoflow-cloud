@@ -1,5 +1,7 @@
 __pycache__
+ha-venv
 venv
+.venv
 .idea
 .DS_Store
 .vscode/settings.json
@@ -8,3 +10,6 @@ requirements.test.txt
 requirements.txt
 setup.cfg
 tests
+scripts/config.json
+scripts/ecoflow_mqtt_parser/config.json
+scripts/ecoflow_mqtt_parser/config.json

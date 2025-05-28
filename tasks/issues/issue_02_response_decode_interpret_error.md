@@ -1,170 +1,72 @@
 ## 問題の概要
 
-EcoFlow Delta Pro 3 からの MQTT メッセージは `scripts/mqtt_capture_dp3_debug.py` スクリプトで受信できているものの、そのペイロードを正しくデコードし、Protobuf メッセージとして解釈することができない。
-具体的には、`/app/device/property/{DEVICE_SN}` トピックなどでメッセージを受信するが、Base64 デコードに失敗したり、デコードに成功しても後続の Protobuf デシリアライズ処理が未実装または不適切なため、有効なデータとして利用できていない。
+EcoFlow Delta Pro 3 からの MQTT メッセージは `scripts/mqtt_capture_dp3_debug.py` スクリプト (現在は `scripts/ecoflow_mqtt_parser/` 配下のモジュール群) で受信できているものの、そのペイロードを正しくデコードし、Protobuf メッセージとして解釈することが課題であった。
+具体的には、`/app/device/property/{DEVICE_SN}` トピックなどでメッセージを受信するが、Base64 デコードの扱いや、デコード後の Protobuf デシリアライズ処理が適切でなく、有効なデータとして利用できていなかった。
 
-## 現在の状況とログ (ユーザー提供ログより)
+## 現在の状況と解決策 (Issue 完了時点)
 
-- MQTT ブローカーへの接続、トピック購読は成功している。
-- データ取得要求メッセージの送信も行われている。
-- `/app/device/property/MR51ZJS4PG6C0181` トピックからメッセージを継続的に受信。
-  - 受信メッセージのペイロードについて、Base64 デコードが試行される。
-    - 例 1: `Length: 414` のメッセージで Base64 デコードに失敗し、「元のペイロードを処理試行します」とログ出力後、「未処理のトピック」となる。
-    - 例 2: `Length: 117` のメッセージで Base64 デコードに成功 (デコード後 len: 15 や 39) するが、やはり「未処理のトピック」となる。
-- 期待する `/app/{USER_ID}/{DEVICE_SN}/thing/property/get_reply` トピックでの全データ応答などは依然として確認できていないか、または正しく処理できていない。
+- **MQTT 接続と基本処理の確立:**
+  - `scripts/ecoflow_mqtt_parser/` 配下のモジュール (`mqtt_client_setup.py`, `message_handler.py`, `main_parser.py` 等) に処理を分割。
+  - MQTT ブローカーへの接続、トピック購読、メッセージ受信、データ取得要求メッセージ (`cmdId:1, cmdFunc:20`) の送信に成功。
+    - 当初、`mqtt_client_setup.py` の `publish_get_all_data_request` 内で `Header` メッセージの `from` フィールド (Python では `from_`) を設定しようとして `TypeError` が発生したが、Protobuf 定義に当該フィールドが存在しない可能性が高いため一時的にコメントアウトし、データ取得自体は成功。
+- **`/app/device/property/{DEVICE_SN}` トピックメッセージの解析成功:**
+  - **エンコード形式:** このトピックのペイロードは Base64 エンコードされていないことが多く、その場合は元のバイナリデータのまま処理。
+  - **デコードフロー:**
+    1. 受信ペイロードを `pm.HeaderMessage` (実際には `ef_dp3_iobroker_pb2.HeaderMessage`) としてデコード。
+    2. `HeaderMessage` 内部の各 `pm.Header` (実際には `ef_dp3_iobroker_pb2.Header`) を取り出す。
+    3. 各 `Header` の `pdata` フィールドに対し、`enc_type` と `src` の値に基づいて `common.xor_decode_pdata` による XOR デコードを実行 (またはスキップ)。
+    4. XOR デコード後の `pdata` を、`Header` の `cmd_id` と `cmd_func` の値に基づき、`protobuf_mapping.py` で定義された特定の Protobuf メッセージ型 (例: `DisplayPropertyUpload`, `cmdFunc50_cmdId30_Report`, `cmdFunc32_cmdId2_Report`) にデコード。
+  - **結果出力:** デコードされた内容は `captured_data.jsonl` に JSON 形式で正しく記録されるようになった。
+    - `message_handler.py` の `_protobuf_to_dict_with_hex` メソッド内の `json_format.MessageToDict` の引数 `including_default_value_fields` が原因で発生していたエラーは、引数を `always_print_fields_with_no_presence=True` と `use_integers_for_enums=True` に修正することで解決。
+- **ioBroker ドキュメントの活用:**
+  - `ioBroker.ecoflow-mqtt/doc/devices/deltapro3.md` が、デコードされた Protobuf メッセージの各フィールドの意味を理解する上で非常に重要な参照情報であることが確認された。
 
-```
-# ユーザー提供ログの抜粋 (例)
-2025-05-28 04:02:36,578 - INFO - [__main__] - メッセージ受信 (トピック: /app/device/property/MR51ZJS4PG6C0181, QoS: 0, Retain: False, MID: 0, Length: 414)
-2025-05-28 04:02:36,579 - WARNING - [__main__] -   Base64デコード失敗。元のペイロードを処理試行します。
-2025-05-28 04:02:36,579 - INFO - [__main__] -   未処理のトピック: /app/device/property/MR51ZJS4PG6C0181
+## 主な課題 (解決済み)
 
-2025-05-28 04:02:36,666 - INFO - [__main__] - メッセージ受信 (トピック: /app/device/property/MR51ZJS4PG6C0181, QoS: 0, Retain: False, MID: 0, Length: 117)
-2025-05-28 04:02:36,666 - INFO - [__main__] -   Base64デコード成功 (len: 15)
-2025-05-28 04:02:36,666 - INFO - [__main__] -   未処理のトピック: /app/device/property/MR51ZJS4PG6C0181
-```
+1.  **`/app/device/property/{DEVICE_SN}` トピックメッセージのエンコード形式特定:** 解決済み。Base64 エンコードされていないケースを正しく処理。
+2.  **Protobuf メッセージ型の特定とデコード処理の実装:** 解決済み。`HeaderMessage` -> `Header` -> `pdata` (XOR デコード含む) -> 具体的な型へのデコードフローを確立。
+3.  **動的な Protobuf 型特定とデコードロジックの欠如:** 解決済み。`protobuf_mapping.py` により `cmd_id` / `cmd_func` に基づく動的デコードを実現。
 
-## 主な課題
+## 残存課題・次のステップ
 
-1.  **`/app/device/property/{DEVICE_SN}` トピックメッセージのエンコード形式特定:**
-    - このトピックから受信するメッセージのペイロードが常に Base64 エンコードされているのか、あるいはされていない場合もあるのかを明確にする必要がある。現状、デコード失敗と成功が混在しているように見える。
-    - ioBroker の実装 (`pstreamDecode`) では Base64 デコードを前提としているように見えるが、実際のデバイス挙動との整合性を確認する必要がある。
-2.  **Protobuf メッセージ型の特定とデコード処理の実装:**
-    - Base64 デコード後 (あるいはデコード不要な場合、生のペイロード) のデータが、どの Protobuf メッセージ型 (`HeaderMessage`, `Header`, `set_dp3`, `get_dp3` など) に対応するのかを特定し、正しくデシリアライズする処理を実装する必要がある。
-    - 特に `HeaderMessage` の場合、内部に複数の `Header` を含み、さらにその `pdata` が XOR デコードや特定の `cmdId`/`cmdFunc` に基づく別の Protobuf 型へのデコードを必要とする場合がある。この複雑な構造の解析処理が `mqtt_capture_dp3_debug.py` には不足している。
-3.  **`get_reply` トピックのメッセージフォーマット:**
-    - データ取得要求に対する応答が期待される `/app/{USER_ID}/{DEVICE_SN}/thing/property/get_reply` トピックでメッセージを受信した場合の、正しいデコード・解釈方法が確立されていない。
-    - `issue_01` で言及のあった「ペイロード先頭バイトが `0x0a`」のケースなど、具体的なフォーマットの調査が必要。
-4.  **動的な Protobuf 型特定とデコードロジックの欠如:**
-    - ioBroker のように、受信した `Header` の `cmdId` や `cmdFunc` フィールド値に基づいて、`pdata` をどの Protobuf 型 (`battery_info_reply`, `inverter_heartbeat`, etc.) として解釈するかを動的に決定する仕組みが必要。
+1.  **`get_reply` トピックのメッセージフォーマット検証:**
+    - データ取得要求に対する応答が期待される `/app/{USER_ID}/{DEVICE_SN}/thing/property/get_reply` トピックでメッセージを受信した場合の処理について、現状は `_process_get_reply_message` で Base64 デコードと `HeaderMessage` としてのパースを試みている。
+    - ioBroker の実装では、このトピックのメッセージペイロード先頭バイトが `0x01` や `0x02` の場合に `setMessage` や `setReply` といった特殊な型でデコードしている部分がある。`0x0a` (Length-delimited field) のケースと合わせ、これらの特殊ケースの検証と対応が必要な場合がある。 (現状のログではこのトピックのメッセージは確認できていないため優先度は低い)
+2.  **デコード済みデータの意味解析:**
+    - `captured_data.jsonl` に記録された `cmdFunc50_cmdId30_Report` や `cmdFunc32_cmdId2_Report` などのメッセージ内容について、`ioBroker.ecoflow-mqtt/doc/devices/deltapro3.md` と照合し、`unknownX` となっているフィールドの具体的な意味を特定する。
+3.  **Protobuf 定義とマッピングの更新:**
+    - 上記の解析で意味が特定できたフィールドについて、`ef_dp3_iobroker_pb2.py` (または元の `.proto` ファイル) のフィールド名をより分かりやすいものに修正し、`protobuf_mapping.py` のデコーダーも合わせて更新する。
+4.  **Home Assistant Entity へのマッピング検討:**
+    - 解析されたデータを Home Assistant のセンサーやスイッチ等にどのように対応付けるかを検討開始する。
 
-## 調査方針・解決策案
+## 調査方針・解決策 (実施済み)
 
 1.  **`/app/device/property/{DEVICE_SN}` トピックのメッセージ解析強化:**
-    - **Base64 デコード処理の見直し:**
-      - トピック名やペイロードの特性 (例: 先頭バイトなど) に基づいて Base64 デコードを試みるか否かを判断するロジックを導入する。常にデコードを試行するのではなく、より確実な場合にのみ実行する。
-      - デコード失敗時には、元のバイナリデータのまま後続の Protobuf デコード処理を試みるフォールバックを検討する。
-    - **Protobuf デコード試行:**
-      - 受信したペイロード (Base64 デコード後または生データ) を、まず `ecopacket_pb2.HeaderMessage` としてデコード試行する。
-      - 失敗した場合、または `HeaderMessage` が適切でないと判断される場合、`ecopacket_pb2.Header` としてデコード試行する。
-      - デコード成功時には、どの型で成功したかと、デコードされたフィールド内容を詳細にログ出力する。
-    - **ioBroker の `parseMessage` および `syncDevice` 関数のロジック移植:**
-      - ioBroker の `main.js` 内のこれらの関数が、どのようにして `/app/device/property/{DEVICE_SN}` からのメッセージを処理しているかを詳細に再レビューする。
-      - 特に、`HeaderMessage` -> `Header` -> `pdata` (XOR デコード) -> 各種ステータス用 Protobuf 型へのデコード、という一連の流れを Python で再現する。
-      - `cmdId` と `cmdFunc` に基づいて `pdata` をデコードする際の型マッピング (ioBroker の `DEVICE_COMMANDS` や `ParamPath`) を Python 側でも利用できるようにする。
-2.  **`get_reply` トピックのメッセージ解析:**
-    - データ取得要求 (`Header` メッセージを `/thing/property/set` に送信) 後に `/thing/property/get_reply` トピックでメッセージを受信した場合、そのペイロード構造を調査する。
-    - ioBroker の `main.js` で `get_reply` がどのように処理されているかを確認し、同様のデコード処理を試みる。
-    - `issue_01` での調査結果「ペイロード先頭バイトが `0x0a`」のメッセージについて、これが Protobuf の標準的なエンコーディング (Length-delimited field type) の一部である可能性を考慮し、`ecopacket_pb2.setMessage` や関連する型でデコードを試す。
+    - **Base64 デコード処理の見直し:** 常に試行し、失敗時はフォールバックする形で対応。
+    - **Protobuf デコード試行:** `HeaderMessage` -> `Header` の順でデコード試行し、成功。
+    - **ioBroker のロジック移植:** `HeaderMessage` -> `Header` -> `pdata` (XOR デコード) -> 各種ステータス用 Protobuf 型へのデコードフローを `message_handler.py` の `_process_header_pdata` 等で再現。`cmdId` と `cmdFunc` に基づく型マッピングは `protobuf_mapping.py` で実現。
+2.  **`get_reply` トピックのメッセージ解析:** (一部対応)
+    - `message_handler.py` の `_process_get_reply_message` で Base64 デコードと`HeaderMessage`としてのパースを実装。特殊ケースの検証は今後の課題。
 3.  **XOR デコード処理の実装と適用:**
-    - `mqtt_capture_dp3_debug.py` に ioBroker と同様の XOR デコード関数 (`xor_decode_pdata`) は存在するが、これが適切なタイミングで `Header` 内の `pdata` に適用されているか確認し、必要であれば修正する。
-    - XOR デコードが必要な条件 (特定の `cmdId` や `cmdFunc` など) を ioBroker のコードから特定する。
-4.  **エラーハンドリングとロギングの強化:**
-    - デコード処理の各ステップ (Base64, Protobuf 型ごとのデコード試行、XOR デコードなど) で、成功・失敗だけでなく、試行した型やキーとなったフィールド値などを詳細にログ出力する。
-    - Protobuf デコードエラー発生時には、具体的なエラー内容 (例: `ParseError: Error parsing message`) と共に、デコード対象となったバイト列 (一部分でも可) をログに出力するとデバッグが容易になる。
-5.  **`ecopacket_pb2.py` の再検証 (補助的):**
-    - 現在のデコード問題の主因ではない可能性が高いが、ioBroker の `.proto` から生成した `ecopacket_pb2.py` が、実際のデバイス通信で使われる全てのメッセージ型とフィールドを網羅しているか、軽微な不整合がないかを再度確認する。
+    - `message_handler.py` の `_process_header_pdata` 内で、ioBroker の条件 (`enc_type == 1 && src != 32`) に基づき `common.xor_decode_pdata` を適用。
+4.  **エラーハンドリングとロギングの全体的強化:**
+    - デコード処理の各ステップで詳細なログ出力を行うように改善。
+    - `json_format.MessageToDict` の引数問題を修正し、Protobuf デコード結果が正しく JSON に変換されるようになった。
+5.  **`ecopacket_pb2.py` (現 `ef_dp3_iobroker_pb2.py`) の再検証:**
+    - ioBroker で使われている Protobuf 定義をベースに利用することで、多くのデバイス固有メッセージ型に対応。
 
-## 期待される成果
+## 期待される成果 (達成済み)
 
-- `/app/device/property/{DEVICE_SN}` トピックから受信するメッセージを、高い成功率で正しい Protobuf 型にデコードし、その内容 (デバイスのステータス情報など) を人間が読める形でログ出力または保存できるようになる。
-- データ取得要求に対する応答 (`get_reply` など) を正しく解釈し、デバイスの全パラメータを取得できるようになる。
-- スクリプトが EcoFlow デバイスからの MQTT メッセージを安定して処理できるようになり、Home Assistant 連携などの次のステップに進むための基盤が整う。
+- `/app/device/property/{DEVICE_SN}` トピックから受信するメッセージを、高い成功率で正しい Protobuf 型にデコードし、その内容 (デバイスのステータス情報など) を JSON 形式で `captured_data.jsonl` に保存できるようになった。
+- これにより、EcoFlow デバイスからの MQTT メッセージを解析し、Home Assistant 連携などの次のステップに進むための基盤が整った。
 
-## 具体的なタスクリスト
+## 具体的なタスクリスト (更新)
 
-0.  [ ] **既存実装の調査:**
-
-    1.  [x] `custom_components/ecoflow_cloud` フォルダ内の既存コード調査:
-        - [x] MQTT 関連処理 (接続、購読、メッセージ送受信、デコード等) の有無と内容確認。
-          - `custom_components/ecoflow_cloud/api/ecoflow_mqtt.py` の `EcoflowMQTTClient` クラスが担当。
-          - Paho MQTT の `AsyncMQTTClient` を利用。
-          - 接続、再接続、購読、メッセージ送受信の基本的な処理を実装。
-          - **デコード処理:** `_on_message` 内で受信メッセージを `device.update_data(payload, topic)` に渡す。直接的な Base64/Protobuf デコード処理はこのファイルにはない。`UnicodeDecodeError` のみの基本的なエラー処理。
-        - [x] Protobuf 関連処理の有無と内容確認。
-          - Protobuf の定義ファイル (`.proto`) 及びそれから生成された Python コード (`_pb2.py`) は `custom_components/ecoflow_cloud/devices/internal/proto/` ディレクトリ内に存在する (例: `powerstream.proto`, `powerstream_pb2.py`, `ecopacket.proto`, `ecopacket_pb2.py` など)。
-          - **デシリアライズ処理の実装例:** `custom_components/ecoflow_cloud/devices/internal/powerstream.py` の `_prepare_data` メソッドでは、`ecopacket_pb2.SendHeaderMsg` を用いて受信ペイロードからヘッダー情報をパースし、その `msg.cmd_id` (例: `1` の場合) に基づいて `msg.pdata` を対応する Protobuf メッセージ型 (例: `powerstream_pb2.InverterHeartbeat`) でデシリアライズする処理が実装されている。
-          - **汎用的なデコード処理の不在:** `BaseDevice._prepare_data` のデフォルト実装では、依然として UTF-8 デコードと JSON パースのみが試行される。PowerStream のようなデバイス固有の `_prepare_data` オーバーライドがない場合、Protobuf メッセージは処理されない。
-          - `EcoflowDataHolder` クラスは、デコード済みの Python 辞書を前提としている。
-          - **結論:** `/app/device/property/{DEVICE_SN}` からのメッセージを処理するためには、PowerStream の実装を参考に、Delta Pro 3 (およびその他のデバイス) 用に `_prepare_data` をオーバーライドし、適切な `cmd_id` の判別、Base64 デコード (必要な場合)、XOR デコード (必要な場合)、および対応する Protobuf 型でのデシリアライズ処理を実装する必要がある。
-    2.  [x] `ioBroker.ecoflow-mqtt` プロジェクトの詳細再調査:
-        - [x] `main.js` におけるメッセージ受信・解析処理 (`on('message')`, `parseMessage`, `syncDevice` 等) のロジックフローの再確認。
-          - **`onReady` 関数内の MQTT メッセージ処理 (`this.client.on('message', ...)`):**
-            - 受信トピックからデバイス ID (`topic`) とメッセージ種別 (`msgtype`) を抽出。
-            - デバイス種別 (`devtype`) に基づき、Protobuf メッセージか JSON メッセージかを判断。
-            - **Protobuf メッセージ処理の場合:**
-              - `devtype` が `pstream`, `plug`, `deltaproultra`, `powerocean`, `panel2`, `alternator`, `deltapro3`, `delta3`, `delta3plus`, `river3`, `river3plus` のいずれか。
-              - `ef.pstreamDecode(this, message, '', topic, msgtype, this.protoSource[devtype], this.protoMsg[devtype], logged)` を呼び出してデコード。
-                - `message`: 生の MQTT ペイロード (Buffer)。
-                - `this.protoSource[devtype]`: デバイス固有の Protobuf 型定義。
-                - `this.protoMsg[devtype]`: デバイス固有の `cmdId`/`cmdFunc` と Protobuf 型のマッピング。
-              - `pstreamDecode` の結果 (`msgdecode`) を `this.storeProtoPayload[devtype](this, this.pdevicesStatesDict[origdevtype], this.pdevicesStates[origdevtype], topic, msgdecode, devtype, haEnable, logged)` に渡して状態を更新。
-                - `this.pdevicesStatesDict[origdevtype]`: 状態定義辞書。
-                - `this.pdevicesStates[origdevtype]`: 状態オブジェクト。
-            - **JSON メッセージ処理の場合:**
-              - 上記以外の `devtype`。
-              - `JSON.parse(message.toString())` でデコードし、デバイス種別に応じた `ef.storeStationPayload` や `ef.storePowerkitPayload` などを呼び出して状態更新。
-        - [x] `lib/ecoflow_utils.js` におけるデータ整形・デコード関連関数 (`pstreamDecode`, `decodeLatestQuotas` 等) の詳細分析。
-          - **`pstreamDecode` 関数の解析結果 (抜粋):**
-            - **入力:** MQTT ペイロード (`payload`、Base64 文字列を期待)、`topic`、`msgtype` (通常は `HeaderMessage` を期待)、`protoSourceDevice` (デバイス固有 proto 定義)、`protoMsg` (デバイス固有の cmdId/cmdFunc と型名のマッピング)。
-            - **Base64 デコード:** 受信した MQTT ペイロードは、最初に Base64 デコードされる (`new Buffer.from(payload, 'base64')`)。
-            - **`HeaderMessage` パース:** Base64 デコード後のデータは、汎用的な `HeaderMessage` 型としてデコードされる。この `HeaderMessage` は内部に `header` という `Header`オブジェクトの配列を持つ。
-            - **各 `Header` の処理ループ:** 配列内の各 `Header` オブジェクトに対して以下の処理が行われる。
-              - **`cmdId`, `cmdFunc`, `src`, `seq` の取得:** `Header` からこれらの制御情報を抽出。
-              - **ペイロード型特定:** `protoMsg` オブジェクト (デバイス定義ファイル由来) を `cmdId` と `cmdFunc` をキーとして検索し、`pdata` をデコードするための具体的な Protobuf メッセージ型名 (`prototyp`) を特定する。特定できない場合は `prototyp` を `'undef'` とし、エラーログを出力。`Header.code == '-2'` の場合はオフラインを示す情報を結果に含める。
-              - **XOR デコード:** `Header.encType === 1` かつ `Header.src !== 32` の場合、`Header.pdata` を `Header.seq` (シーケンス番号) をキーとして XOR デコードする。
-              - **`pdata` デコード:** 特定された `prototyp` が `'undef'` でない場合、デバイス固有の `protoSourceDevice` を用いて、(必要なら XOR デコード済みの) `Header.pdata` を実際のデータ構造にデコードする。デコード結果は `prototyp` をキーとして結果オブジェクトに格納。
-            - **結果オブジェクト:** `returnobj` には、キーがデコードされたメッセージの型名 (`prototyp`)、値がデコードされたメッセージオブジェクトとなる。
-            - **全量データのキャッシュ:** デコード結果全体は `adapter.quotas[topic]` にも保存される。
-            - **示唆:** `/app/device/property/{DEVICE_SN}` トピックのメッセージは `RuntimePropertyUpload` または `DisplayPropertyUpload` 型である可能性が高い。
-          - **`getLastProtobufQuotas` (ecoflow_utils.js 内、ioBroker 状態トグル版) 関数の解析結果:**
-            - **役割:** この関数は直接 MQTT メッセージを送信するのではなく、ioBroker 内部の状態 (`.action.latestQuotas`) をトグルする。
-            - **トリガー:** この状態変更が、実際の MQTT 要求メッセージ送信処理 (おそらく`main.js`の`onStateChange`経由で、メッセージを構築する別の関数を呼び出す) のトリガーとなる。
-            - **結論:** 送信すべき具体的な要求メッセージの内容 (cmdId, cmdFunc, pdata) は、この関数からは直接特定できない。トリガーによって呼び出されるメッセージ構築処理の特定が必要。
-        - [x] Base64 デコード、XOR デコードの適用条件と具体的な処理内容の再確認。
-          - **Base64 デコード:** `pstreamDecode` 関数の冒頭で、入力ペイロードは常に Base64 デコードされることが確認された。
-          - **XOR デコード:** `pstreamDecode` 関数の解析により、`Header.encType === 1` かつ `Header.src !== 32` の場合に `Header.pdata` が対象となり、キーは `Header.seq` であることが確認された。
-        - [x] `lib/dict_data/` 内のデバイス別定義ファイル (特に `ef_deltapro3_data.js`) におけるコマンド ID (`cmdId`), 関数 ID (`cmdFunc`), Protobuf 型マッピングの再確認。
-          - **`deviceCmd` オブジェクト (抜粋):**
-            - ioBroker の内部状態名と、それを操作するための送信メッセージヘッダー情報 (`dest`, `cmdFunc`, `cmdId`, `dataLen`) をマッピング。
-            - 主にコマンド送信時に利用される。
-            - 例: `action.latestQuotas` (全データ取得要求) は `cmdFunc: 20, cmdId: 1` を使用。
-          - **`protoMsg` オブジェクト (抜粋):**
-            - 受信した `Header` の `cmdId` と `cmdFunc` の値から、`pdata` をデコードすべき Protobuf メッセージ型名を特定するためのマッピング。
-            - `pstreamDecode` 関数内で利用される。
-            - **重要なマッピング例 (DeltaPro3):**
-              - `cmdId: 22, cmdFunc: 254` → `RuntimePropertyUpload`
-              - `cmdId: 21, cmdFunc: 254` → `DisplayPropertyUpload`
-              - `cmdId: 18, cmdFunc: 254` → `setReply_dp3`
-              - `cmdId: 17, cmdFunc: 254` → `set_dp3`
-            - **`protoSource` オブジェクト (確定):**
-              - `ef_deltapro3_data.js` 内にインラインで Protobuf スキーマ定義 (例: `message RuntimePropertyUpload { ... }`) が文字列として直接記述されている。これに基づき、実行時に Protobuf パーサーが動的に生成・利用される。
-              - このスキーマ定義は、`ioBroker.ecoflow-mqtt/doc/devices/deltapro3.md` に、各メッセージ型 (`RuntimePropertyUpload`, `DisplayPropertyUpload` など) とそのフィールドの意味が人間可読な形でまとめられている。
-            - **`storeProtoPayload` (ef_deltapro3_data.js 内) 関数の解析結果 (抜粋):**
-              - **入力:** `pstreamDecode` でデコードされたペイロードオブジェクト (キーが Protobuf メッセージ型名、値がデコード済みデータオブジェクト)。
-              - **処理対象チャネル (Protobuf メッセージ型名):**
-                - `RuntimePropertyUpload`, `DisplayPropertyUpload`: デバイスからの状態・表示情報。ペイロード内の各プロパティを `stateDictObj` の同名チャネル定義を参照して状態更新。
-
-1.  [ ] **`/app/device/property/{DEVICE_SN}` トピックメッセージ解析の実装:**
-    1.  [ ] Base64 デコードロジック改善:
-        - [ ] ペイロード特性に基づくデコード要否判断ロジックの導入。
-        - [ ] デコード失敗時のフォールバック (生データでの Protobuf デコード試行) 実装。
-    2.  [ ] Protobuf デコード処理実装:
-        - [ ] `ecopacket_pb2.HeaderMessage` でのデコード試行。
-        - [ ] `ecopacket_pb2.Header` でのデコード試行 (上記失敗時)。
-        - [ ] デコード成功/失敗の詳細ログ出力強化。
-    3.  [ ] ioBroker `parseMessage`/`syncDevice` ロジック移植:
-        - [ ] `HeaderMessage` -> `Header` -> `pdata` (XOR) -> 具体的な Protobuf 型へのデコードフロー実装。
-        - [ ] `cmdId`/`cmdFunc` と Protobuf 型のマッピング機構の確立。
-2.  [ ] **`get_reply` トピックメッセージ解析の実装:**
-    1.  [ ] ioBroker での `get_reply` 処理方法の調査・確認。
-    2.  [ ] 確認した処理方法に基づき、Python スクリプトでのデコード処理実装。
-    3.  [ ] 「先頭バイト `0x0a`」メッセージの `ecopacket_pb2.setMessage` 等でのデコード試行。
-3.  [ ] **XOR デコード処理の適用:**
-    1.  [ ] `xor_decode_pdata` 関数が `Header` 内 `pdata` に適用される条件の特定 (ioBroker コードベース)。
-    2.  [ ] 特定した条件に基づき、スクリプト内での XOR デコード実行ロジックの修正・確認。
-4.  [ ] **エラーハンドリングとロギングの全体的強化:**
-    1.  [ ] デコード処理の各ステップでの詳細なログ出力 (試行型、キーフィールド値など)。
-    2.  [ ] Protobuf デコードエラー時のエラー内容と対象バイト列のログ出力。
-5.  [ ] **`ecopacket_pb2.py` の再検証 (必要に応じて):**
-    1.  [ ] ioBroker の `.proto` ファイルとの比較、不足しているメッセージ型やフィールドがないか確認。
+0.  [x] **既存実装の調査:** (完了)
+1.  [x] **`/app/device/property/{DEVICE_SN}` トピックメッセージ解析の実装:** (完了)
+2.  [ ] **`get_reply` トピックメッセージ解析の実装:** (一部完了、特殊ケース未対応)
+    1.  [ ] ioBroker での `get_reply` 処理方法の再調査（特に先頭バイト `0x01`, `0x02`, `0x0a` のケース）。
+    2.  [ ] 必要であれば、上記特殊ケースに対応するデコード処理を Python スクリプトに実装。
+3.  [x] **XOR デコード処理の適用:** (完了)
+4.  [x] **エラーハンドリングとロギングの全体的強化:** (完了)
+5.  [x] **Protobuf 定義の検証:** (完了、ioBroker ベースのものを採用)
