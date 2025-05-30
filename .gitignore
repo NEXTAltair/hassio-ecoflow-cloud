@@ -11,3 +11,4 @@ requirements.txt
 setup.cfg
 tests
 */config.json
+mcp.json
