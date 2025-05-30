@@ -172,3 +172,23 @@ Issue 02「受信メッセージの解析・デコード」の完了により、
 - 同じパラメータが複数のメッセージタイプやフィールドで報告されることもあります (例: SOC, 電圧など)。
 - `DisplayPropertyUpload` に記載のあるパラメータでも、`cmdFunc50_cmdId30_Report` (Runtime 相当) に含まれてくることがあります。デバイスからのデータ送信の効率化や実装の都合によるものと考えられます。
 - 数値の単位 (例: mV vs V, mA vs A) やスケールファクター (mult) に注意が必要です。
+
+### 2025-05-29 11:18 実行ログ解析
+
+- **送信リクエスト:** `cmdId:1, cmdFunc:20` (src:1, dest:32)
+- **受信メッセージ (`/app/device/property/{SN}`):**
+  - `HeaderMessage` -> `Header` -> `pdata` のデコード成功。
+  - 確認された `pdata` の `cmdId`/`cmdFunc` とデコード結果:
+    - `cmdId:21, cmdFunc:254` -> `DisplayPropertyUpload` (複数回)
+    - `cmdId:50, cmdFunc:32` (encType:0, src:3) -> `cmdFunc50_cmdId30_Report` (複数回)
+    - `cmdId:2, cmdFunc:32` -> `cmdFunc32_cmdId2_Report` (複数回)
+    - **`cmdId:22, cmdFunc:254` -> `RuntimePropertyUpload` (新規確認、複数回)**
+- **`get_reply`:** 今回の実行ログでは、`cmdId:1, cmdFunc:20` に対する `get_reply` は受信されなかった。これは `cmdId:255, cmdFunc:2` で応答があった以前のログと整合する。
+- **Base64 デコード:** `/app/device/property/{SN}` からのメッセージペイロードに対する Base64 デコードは期待通り失敗し、生のバイナリデータが後続の Protobuf デコードに使用されている。
+
+**考察:**
+
+- `RuntimePropertyUpload` (`cmdId:22, cmdFunc:254`) が新たに確認された。このメッセージの内容と `DisplayPropertyUpload` との差分や、ioBroker のドキュメントとの関連性を調査する必要がある。
+- 引き続き `get_reply` の安定的な受信と、その内容 (特にフォーマットバイト `0x3c` の意味) の解明が重要。
+
+- [ ] `RuntimePropertyUpload` (`cmdId:22, cmdFunc:254`) のフィールド詳細解析と `.proto` ファイルへの反映。

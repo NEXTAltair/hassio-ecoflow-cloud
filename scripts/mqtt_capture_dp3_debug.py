@@ -7,20 +7,15 @@ import time
 import ssl
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Tuple, cast, Optional
+from typing import Any
 import uuid
-import traceback
-import hashlib
+
 import base64
 import binascii
 
-from google.protobuf import text_format, message as _message
-from google.protobuf.message import Message
 from google.protobuf import json_format
 import threading
 
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
 
 import paho.mqtt.client as mqtt
 
@@ -224,8 +219,8 @@ def on_connect(
     mqtt_client: mqtt.Client,
     userdata: Any,
     flags: dict[str, Any],
-    rc: int | mqtt.ReasonCodes,
-    properties: mqtt.Properties | None = None,
+    rc: Any,
+    properties: Any | None = None,
 ) -> None:
     """MQTTブローカーに接続したときに呼び出されます。"""
     global last_activity_time
@@ -234,8 +229,8 @@ def on_connect(
     connect_rc_int: int
     connect_reason_str: str
 
-    if isinstance(rc, mqtt.ReasonCodes):
-        connect_rc_int = rc.id  # type: ignore[attr-defined]
+    if hasattr(rc, "id"):
+        connect_rc_int = rc.id
         connect_reason_str = str(rc)
     elif isinstance(rc, int):
         connect_rc_int = rc
@@ -264,21 +259,15 @@ def on_connect(
             # データ取得要求メッセージの送信 (latestQuotas相当)
             message_to_send = ecopacket_pb2.Header()
             message_to_send.src = 32  # device_app
-            message_to_send.dest = 32  # device_iot
-            # message_to_send.seq = int(time.time() * 1000) # ミリ秒タイムスタンプ
+            message_to_send.dest = 32  # device_iot (ioBrokerは32を使用)
             # 32ビット符号付き整数に収める
             message_to_send.seq = ctypes.c_int32(int(time.time() * 1000)).value
-            # message_to_send.from_ = "ios" # Pythonの予約語 'from' と衝突するため、末尾にアンダースコアが付加されると期待していた
-            setattr(
-                message_to_send, "from", "ios"
-            )  # setattr を使用して 'from' フィールドにアクセス
-
-            # Headerフィールドの設定 (ioBrokerのlatestQuotas送信時を参考)
-            message_to_send.src = 32
-            message_to_send.dest = 32  # ioBrokerは32を使用
-            message_to_send.seq = ctypes.c_int32(int(time.time() * 1000)).value
             setattr(message_to_send, "from", "ios")
-            # cmd_id, cmd_func は設定しない (ioBrokerのlatestQuotas送信時も設定していない)
+
+            # cmd_id, cmd_func を設定 (ioBrokerのlatestQuotas送信時)
+            message_to_send.cmd_id = 255
+            message_to_send.cmd_func = 2
+
             # pdata に空のbytesを設定
             message_to_send.pdata = b""
             message_to_send.data_len = len(message_to_send.pdata)
@@ -296,7 +285,6 @@ def on_connect(
                 config["publish_topic"],
                 payload=serialized_message,
                 qos=1,
-                retain=False,
             )
             logger.debug(
                 "メッセージ送信完了 (MID: ...)"
@@ -399,7 +387,7 @@ def on_message(mqtt_client: mqtt.Client, userdata: Any, msg: mqtt.MQTTMessage) -
 
     # decoded_message_obj: Optional[Message] = None # Anyに変更
     decoded_message_obj: Any = None
-    protobuf_type_name: Optional[str] = "Unknown"
+    protobuf_type_name: str | None = "Unknown"
 
     # トピックに応じた処理分岐
     user_id = config.get("user_id")
@@ -447,8 +435,8 @@ def on_message(mqtt_client: mqtt.Client, userdata: Any, msg: mqtt.MQTTMessage) -
 
                 if hasattr(set_msg, "header") and set_msg.header:
                     inner_header = set_msg.header
-                    pdata_for_final_decode: Optional[bytes] = None  # 型を明示
-                    pdata_bytes_for_xor: Optional[bytes] = None  # 型を明示
+                    pdata_for_final_decode: bytes | None = None  # 型を明示
+                    pdata_bytes_for_xor: bytes | None = None  # 型を明示
 
                     if hasattr(inner_header, "pdata"):
                         if isinstance(
@@ -469,8 +457,8 @@ def on_message(mqtt_client: mqtt.Client, userdata: Any, msg: mqtt.MQTTMessage) -
                             )
 
                             if (
-                                hasattr(inner_header, "encType")
-                                and inner_header.encType == 1
+                                hasattr(inner_header, "enc_type")
+                                and inner_header.enc_type == 1
                                 and hasattr(inner_header, "src")
                                 and inner_header.src != 32
                                 and hasattr(inner_header, "seq")
@@ -577,8 +565,8 @@ def on_message(mqtt_client: mqtt.Client, userdata: Any, msg: mqtt.MQTTMessage) -
                 if (
                     hasattr(h_msg, "pdata")
                     and isinstance(h_msg.pdata, bytes)
-                    and hasattr(h_msg, "encType")
-                    and h_msg.encType == 1
+                    and hasattr(h_msg, "enc_type")
+                    and h_msg.enc_type == 1
                     and hasattr(h_msg, "src")
                     and h_msg.src != 32
                     and hasattr(h_msg, "seq")
@@ -662,8 +650,8 @@ def on_message(mqtt_client: mqtt.Client, userdata: Any, msg: mqtt.MQTTMessage) -
 def on_disconnect(
     client_obj: mqtt.Client,
     userdata: Any,
-    rc: int | mqtt.ReasonCodes | None = None,
-    properties: mqtt.Properties | None = None,
+    rc: Any | None = None,
+    properties: Any | None = None,
     *args: Any,
 ) -> None:
     """MQTTブローカーから切断されたときに呼び出されます。"""
@@ -676,8 +664,8 @@ def on_disconnect(
     if rc is None:  # 通常の disconnect() 呼び出しなど
         reason_code_int = 0
         reason_string = "Normal disconnection"
-    elif isinstance(rc, mqtt.ReasonCodes):  # Paho MQTT v2.0+
-        reason_code_int = rc.id  # type: ignore[attr-defined]
+    elif hasattr(rc, "id"):  # Paho MQTT v2.0+ (ReasonCode object)
+        reason_code_int = rc.id
         reason_string = str(rc)
     elif isinstance(rc, int):  # Paho MQTT v1.x
         reason_code_int = rc

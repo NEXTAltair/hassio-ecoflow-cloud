@@ -10,6 +10,4 @@ requirements.test.txt
 requirements.txt
 setup.cfg
 tests
-scripts/config.json
-scripts/ecoflow_mqtt_parser/config.json
-scripts/ecoflow_mqtt_parser/config.json
+*/config.json

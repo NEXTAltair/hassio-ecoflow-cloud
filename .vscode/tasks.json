@@ -4,7 +4,10 @@
     {
       "label": "Reset homeassistant",
       "type": "shell",
-      "command": "rm -Rf ${workspaceFolder}/core/config/ && mkdir ${workspaceFolder}/core/config/ && ln -s ${workspaceFolder}/custom_components ${workspaceFolder}/core/config/custom_components"
+      "command": "rm -Rf ${workspaceFolder}/core/config/ && mkdir ${workspaceFolder}/core/config/ && ln -s ${workspaceFolder}/custom_components ${workspaceFolder}/core/config/custom_components",
+      "problemMatcher": [
+        "$python"
+      ]
     },
     {
       "label": "Generate Docs",

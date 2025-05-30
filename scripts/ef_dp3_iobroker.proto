@@ -108,84 +108,84 @@ message RuntimePropertyUpload {
 }
 
 message cmdFunc50_cmdId30_Report {
-    optional int32 unknown1 = 1;
-    optional int32 unknown2 = 2;
-    optional int32 unknown3 = 3;
-    optional int32 unknown4 = 4;
-    optional int32 unknown5 = 5;
-    optional int32 unknown6 = 6;
-    optional int32 unknown7 = 7;
-    optional int32 unknown8 = 8;
-    optional int32 unknown9 = 9;
-    optional int32 unknown10 = 10;
-    optional int32 unknown11 = 11;
-    optional int32 remainCap12 = 12;
-    optional int32 unknown13 = 13;
-    optional int32 unknown14 = 14;
-    optional int32 unknown15 = 15;
-    optional int32 maxCellVol16 = 16;
-    optional int32 minCellVol17 = 17;
-    optional int32 maxCellTemp18 = 18;
-    optional int32 minCellTemp19 = 19;
-    optional int32 maxMosTemp20 = 20;
-    optional int32 minMosTemp21 = 21;
-    optional int32 unknown22 = 22;
-    optional int32 unknown23 = 23;
-    optional int32 unknown24 = 24;
-    optional float unknown25 = 25;
-    optional int32 unknown26 = 26;
-    optional int32 unknown27 = 27;
-    optional int32 unknown28 = 28;
-    optional int32 unknown29 = 29;
-    optional int32 unknown30 = 30;
-    optional int32 unknown31 = 31;
-    optional int32 unknown32 = 32;
-    repeated int32  cellVol33 = 33;
-    optional int32 unknown34 = 34;
-    repeated int32 cellTemp35 = 35;
-    optional string version36 = 36;
-    optional int32 bmsHeartVer37 = 37;
-    optional int32 ecloudOcv38 = 38;
-    optional string deveiceSn39 = 39;
-    optional int32 unknown40 = 40;
-    optional int32 unknown41 = 41;
-    optional float unknown42 = 42;
+    optional sint32 bms_flt_state = 1; // BMS fault state (0: OK)
+    optional sint32 bms_pro_state = 2; // BMS protection state (0: OK)
+    optional sint32 bms_alm_state = 3; // BMS alarm state (0: OK)
+    optional sint32 bms_bal_state = 4; // BMS balance state (0: OK)
+    optional uint64 unknown5 = 5; // BMS related ID or counter?
+    optional sint32 unknown6 = 6;
+    optional sint32 bms_batt_vol = 7; // mV, Main battery voltage (e.g., 51510 for 51.510V)
+    optional sint32 bms_batt_amp = 8; // mA, Main battery current (e.g., -8938 for -8.938A, discharging)
+    optional sint32 bms_max_cell_temp_dup = 9; // °C, Main battery max cell temperature (duplicate of maxCellTemp18)
+    optional sint32 unknown10 = 10;
+    optional uint32 bms_design_cap_mah_dup = 11; // mAh, Battery design capacity (duplicate of unknown24)
+    optional uint32 bms_remain_cap_mah = 12; // mAh, Battery remaining capacity
+    optional uint32 bms_full_cap_mah = 13; // mAh, Battery full charge capacity
+    optional sint32 unknown14 = 14;
+    optional uint32 bms_batt_soh_percent_int = 15; // %, Main battery SOH (integer representation, compare with soh54 float)
+    optional uint32 max_cell_vol_mv = 16; // mV, Max cell voltage (e.g., 3232 for 3.232V)
+    optional uint32 min_cell_vol_mv = 17; // mV, Min cell voltage (e.g., 3205 for 3.205V)
+    optional sint32 max_cell_temp_c = 18; // °C, Main battery max cell temperature
+    optional sint32 min_cell_temp_c = 19; // °C, Main battery min cell temperature
+    optional sint32 max_mos_temp_c = 20; // °C, BMS MOS max temperature
+    optional sint32 min_mos_temp_c = 21; // °C, BMS MOS min temperature
+    optional sint32 unknown22 = 22;
+    optional sint32 unknown23 = 23;
+    optional uint32 bms_design_cap_mah = 24; // mAh, Battery design capacity
+    optional float bms_batt_soc_percent_float1 = 25; // %, Main battery SOC (float, similar to unknown42, unknown44)
+    optional sint32 unknown26 = 26;
+    optional uint32 bms_chg_rem_time_min = 27; // min, Main battery remaining charging time
+    optional uint32 bms_dsg_rem_time_min = 28; // min, Main battery remaining discharging time
+    optional sint32 unknown29 = 29;
+    optional sint32 unknown30 = 30;
+    optional sint32 max_mos_temp_c_dup = 31; // °C, BMS MOS max temperature (duplicate of maxMosTemp20)
+    optional sint32 cell_vol_array_size = 32; // Number of elements in cellVol33 array (usually 16)
+    repeated uint32  cell_vol_mv = 33; // mV, Array of individual cell voltages (16 cells)
+    optional sint32 cell_temp_array_size = 34; // Number of elements in cellTemp35 array (usually 8)
+    repeated sint32 cell_temp_c = 35; // °C, Array of individual cell temperatures (8 sensors)
+    optional string bms_firm_ver = 36; // BMS firmware version
+    optional uint32 bms_heart_ver = 37; // BMS heartbeat version?
+    optional uint32 ecloud_ocv = 38; // OCV (Open Circuit Voltage) related? 65535 might be invalid.
+    optional string bms_sn = 39; // BMS Serial Number?
+    optional sint32 unknown40 = 40;
+    optional sint32 unknown41 = 41;
+    optional float bms_batt_soc_percent_float2 = 42; // %, Main battery SOC (float, similar to unknown25, unknown44)
     optional float unknown43 = 43;
-    optional float unknown44 = 44;
-    optional int32 unknown45 = 45;
-    optional int32 unknown46 = 46;
-    optional int32 unknown47 = 47;
-    optional int32 unknown48 = 48;
-    optional int32 unknown49 = 49;
-    optional int32 unknown50 = 50;
-    optional int32 unknown51 = 51;
-    optional float unknown52 = 52;
+    optional float bms_batt_soc_percent_float3 = 44; // %, Main battery SOC (float, similar to unknown25, unknown42)
+    optional sint32 unknown45 = 45; // -1 might indicate invalid or not set
+    optional sint32 unknown46 = 46;
+    optional sint32 bms_chg_dsg_state = 47; // Main battery charging/discharging state (0: idle, 1: discharging, 2: charging)
+    optional sint32 unknown48 = 48;
+    optional sint32 unknown49 = 49;
+    optional uint64 unknown50 = 50;
+    optional uint64 unknown51 = 51;
+    optional float unknown52 = 52; // SOH related value?
     optional float unknown53 = 53;
-    optional float soh54 = 54;
-    optional int32 unknown55 = 55;
-    repeated int32 mosTemp56 = 56;
-    optional int32 unknown57 = 57;
-    repeated int32 unknown58 = 58;
-    optional int32 unknown61 = 61;
-    repeated int32 unknown62 = 62;
-    optional int32 unknown63 = 63;
-    optional int32 unknown64 = 64;
-    optional int32 unknown67 = 67;
-    optional int32 unknown68 = 68;
-    optional int32 unknown69 = 69;
-    repeated int32 error70 = 70;
-    optional int32 unknown71 = 71;
-    repeated int32 batVolt72 = 72;
-    optional int32 unknown73 = 73;
-    optional int32 unknown74 = 74;
-    optional int32 unknown75 = 75;
-    optional int32 unknown76 = 76;
-    optional int32 unknown77 = 77;
-    optional int32 unknown78 = 78;
-    optional int32 unknown79 = 79;
-    optional int32 unknown80 = 80;
-    optional string packSn81 = 81;
-    optional int32 unknown82 = 82;
+    optional float bms_batt_soh_percent_float = 54; // %, Battery SOH (float, likely more accurate than unknown15)
+    optional sint32 unknown55 = 55;
+    repeated sint32 mos_temp_c = 56; // °C, MOS temperatures (3 sensors)
+    optional sint32 unknown57 = 57;
+    repeated sint32 unknown58 = 58;
+    optional sint32 unknown61 = 61;
+    repeated sint32 unknown62 = 62;
+    optional sint32 unknown63 = 63;
+    optional sint32 unknown64 = 64;
+    optional sint32 unknown67 = 67;
+    optional sint32 unknown68 = 68;
+    optional sint32 unknown69 = 69;
+    repeated uint32 bms_err_code_flags = 70; // BMS error code array (16 elements), each element might be a flag (0: no error)
+    optional sint32 unknown71 = 71;
+    repeated sint32 bat_volt_mv_array = 72; // mV, Battery voltage (array, usually 1 element)
+    optional uint32 unknown73 = 73;
+    optional sint32 unknown74 = 74;
+    optional sint32 unknown75 = 75;
+    optional sint32 unknown76 = 76;
+    optional sint32 unknown77 = 77;
+    optional sint32 unknown78 = 78;
+    optional uint64 unknown79 = 79;
+    optional uint64 unknown80 = 80;
+    optional string pack_sn = 81; // Battery pack serial number?
+    optional sint32 unknown82 = 82;
 }
 
 enum TIME_TASK_MODE {
@@ -393,37 +393,37 @@ message ResvInfo {
 
 //ems
 message struct32_2_1 {
-    optional int32 unknown1 = 1;
-    optional int32 unknown2 = 2;
-    optional int32 unknown3 = 3;
-    optional int32 volt4 = 4;
-    optional int32 unknown5 = 5;
-    optional int32 unknown6 = 6;
-    optional int32 maxChargeSoc7 = 7;
-    optional int32 unknown8 = 8;
-    optional int32 unknown9 = 9;
-    optional int32 unknown10 = 10;
-    optional int32 unknown11 = 11;
-    optional int32 unknown12 = 12;
-    optional int32 unknown13 = 13;
-    optional int32 unknown14 = 14;
-    optional float soc15 = 15;
-    repeated int32 bmsIsConnt16 = 16;
-    optional int32 unknown17 = 17;
-    optional int32 unknown18 = 18;
-    optional int32 unknown19 = 19;
-    optional int32 unknown20 = 20;
-    optional int32 unknown21 = 21;
-    optional int32 unknown22 = 22;
-    optional int32 unknown23 = 23;
+    optional sint32 unknown1_s1 = 1; // Changed from unknown1 to avoid conflict
+    optional sint32 unknown2_s1 = 2; // Changed from unknown2 to avoid conflict
+    optional sint32 unknown3_s1 = 3; // Changed from unknown3 to avoid conflict
+    optional sint32 cms_batt_vol_mv = 4; // mV, CMS battery voltage (e.g., 53350 for 53.350V)
+    optional uint32 cms_chg_req_amp = 5; // mA?, CMS charge request current (130000 might be 130.000A or another param)
+    optional sint32 unknown6_s1 = 6; // Changed from unknown6 to avoid conflict
+    optional uint32 cms_max_chg_soc_percent = 7; // %, Charge limit SOC
+    optional uint32 cms_min_dsg_soc_percent = 8; // %, Discharge limit SOC
+    optional uint32 ac_out_freq_hz_config = 9; // Hz, AC output frequency (may correspond to cfgAcOutFreq or acOutFreq)
+    optional sint32 unknown10_s1 = 10; // Changed from unknown10 to avoid conflict
+    optional sint32 unknown11_s1 = 11; // Changed from unknown11 to avoid conflict
+    optional uint32 cms_chg_rem_time_min = 12; // min, CMS remaining charging time
+    optional uint32 cms_dsg_rem_time_min = 13; // min, CMS remaining discharging time
+    optional sint32 cms_chg_dsg_state = 14; // CMS charging/discharging state (0: idle, 1: discharging, 2: charging)
+    optional float cms_batt_soc_percent = 15; // %, Overall SOC
+    repeated sint32 bms_is_conn_state = 16; // BMS connection state (for multiple packs? e.g., [3,0,3])
+    optional sint32 unknown17_s1 = 17; // Changed from unknown17 to avoid conflict
+    optional sint32 unknown18_s1 = 18; // Changed from unknown18 to avoid conflict
+    optional sint32 unknown19_s1 = 19; // Changed from unknown19 to avoid conflict
+    optional sint32 unknown20_s1 = 20; // Changed from unknown20 to avoid conflict
+    optional sint32 unknown21_s1 = 21; // Changed from unknown21 to avoid conflict
+    optional sint32 unknown22_s1 = 22; // Changed from unknown22 to avoid conflict
+    optional uint32 cms_oil_off_soc_percent = 23; // %, SOC for automatically stopping Smart Generator (or cmsOilOnSoc)
 }
 
 message struct32_2_2 {
-    optional int32 unknown1 = 1;
-    optional int32 unknown2 = 2;
-    optional int32 unknown3 = 3;
-    optional int32 unknown4 = 4;
-    optional int32 unknown5 = 5;
+    optional sint32 unknown1_s2 = 1; // Changed from unknown1 to avoid conflict
+    optional sint32 unknown2_s2 = 2; // Changed from unknown2 to avoid conflict
+    optional sint32 unknown3_s2 = 3; // Changed from unknown3 to avoid conflict
+    optional sint32 unknown4_s2 = 4; // Changed from unknown4 to avoid conflict
+    optional sint32 unknown5_s2 = 5; // Changed from unknown5 to avoid conflict
 }
 
 message cmdFunc32_cmdId2_Report {
@@ -432,9 +432,9 @@ message cmdFunc32_cmdId2_Report {
 }
 
 message cmdFunc254_cmdId23_Report {
-    optional int32 timestamp1 = 1;
-    optional float unknown2 = 2;
-    optional int32 unknown5 = 5;
+    optional int32 report_timestamp = 1; // Timestamp of the report
+    optional float unknown2_f23 = 2; // Changed from unknown2 to avoid conflict
+    optional int32 unknown5_f23 = 5; // Changed from unknown5 to avoid conflict
 }
 
 message set_dp3 {

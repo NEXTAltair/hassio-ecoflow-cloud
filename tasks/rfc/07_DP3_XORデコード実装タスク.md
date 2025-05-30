@@ -1,28 +1,31 @@
-# DP3 XORデコード実装タスク
+# DP3 XOR デコード実装タスク
 
 ## 1. 概要
 
-Delta Pro 3のMQTTハートビートメッセージに適用されているXOR暗号化を解除する処理を実装する。
-これは、DP3のProtobuf通信処理の基盤となる重要なコンポーネントであり、全てのデータ解析・デバイス制御の前提となる。
+Delta Pro 3 の MQTT ハートビートメッセージに適用されている XOR 暗号化を解除する処理を実装する。
+これは、DP3 の Protobuf 通信処理の基盤となる重要なコンポーネントであり、全てのデータ解析・デバイス制御の前提となる。
 
 ## 2. 技術背景
 
-### **XOR暗号化の仕組み**
-- **対象**: ハートビートメッセージ（`app/device/property/<DEVICE_SN>`）のpdata部分
-- **暗号化方式**: ecopacket.Header内の`seq`フィールドを使用したXOR暗号化
-- **キー**: 通常は`seq`の下位1バイト（`seq & 0xFF`）
-- **適用cmdId**: 1, 2, 3, 4, 32等のハートビート系メッセージ
+### **XOR 暗号化の仕組み**
+
+- **対象**: ハートビートメッセージ（`app/device/property/<DEVICE_SN>`）の pdata 部分
+- **暗号化方式**: ecopacket.Header 内の`seq`フィールドを使用した XOR 暗号化
+- **キー**: 通常は`seq`の下位 1 バイト（`seq & 0xFF`）
+- **適用 cmdId**: 1, 2, 3, 4, 32 等のハートビート系メッセージ
 
 ### **処理フロー**
+
 ```
 MQTTメッセージ → ecopacket.Header解析 → seq抽出 → XORデコード → Protobufパース
 ```
 
-## 3. Phase 1: 基本XORデコード実装
+## 3. Phase 1: 基本 XOR デコード実装
 
 ### **3.1 コア関数の実装**
 
-#### **基本XORデコード関数**
+#### **基本 XOR デコード関数**
+
 ```python
 def xor_decode_pdata(pdata: bytes, seq: int) -> bytes:
     """
@@ -56,6 +59,7 @@ def xor_decode_pdata(pdata: bytes, seq: int) -> bytes:
 ```
 
 #### **ヘッダー解析統合関数**
+
 ```python
 import ecopacket_pb2
 from typing import Tuple, Optional
@@ -103,7 +107,8 @@ def decode_heartbeat_message(raw_data: bytes) -> Tuple[Optional[bytes], dict]:
 
 ### **3.2 デコード検証機能**
 
-#### **Protobuf妥当性チェック**
+#### **Protobuf 妥当性チェック**
+
 ```python
 def is_valid_protobuf(data: bytes) -> bool:
     """
@@ -187,7 +192,8 @@ def skip_field(data: bytes, pos: int, wire_type: int) -> int:
 
 ### **4.1 複数キー対応**
 
-#### **代替XORキー検証**
+#### **代替 XOR キー検証**
+
 ```python
 def try_multiple_xor_keys(pdata: bytes, seq: int) -> Tuple[Optional[bytes], str]:
     """
@@ -245,7 +251,8 @@ def decode_with_multi_byte_key(pdata: bytes, key: int) -> bytes:
 
 ### **5.1 高速化実装**
 
-#### **NumPy活用版**
+#### **NumPy 活用版**
+
 ```python
 import numpy as np
 
@@ -279,22 +286,25 @@ def xor_decode_numpy(pdata: bytes, seq: int) -> bytes:
 ## 6. 成果物・次ステップ
 
 ### **6.1 期待される成果物**
-- [ ] **基本XORデコード関数**: `xor_decode_pdata()`
+
+- [ ] **基本 XOR デコード関数**: `xor_decode_pdata()`
 - [ ] **統合デコード関数**: `decode_heartbeat_message()`
-- [ ] **Protobuf妥当性チェック**: `is_valid_protobuf()`
+- [ ] **Protobuf 妥当性チェック**: `is_valid_protobuf()`
 - [ ] **複数キー対応**: `try_multiple_xor_keys()`
 - [ ] **統合デコーダークラス**: `DP3XORDecoder`
 
 ### **6.2 品質基準**
+
 - [ ] **デコード成功率**: 95%以上
-- [ ] **処理速度**: 1メッセージあたり1ms以下
+- [ ] **処理速度**: 1 メッセージあたり 1ms 以下
 - [ ] **メモリ効率**: 不要なコピー最小化
 - [ ] **エラーハンドリング**: 全例外ケース対応
 
 ### **6.3 次ステップへの引き継ぎ**
-- [ ] **delta_pro3.py実装**: デバイスクラスへの統合
-- [ ] **Protobufパース実装**: 各cmdIdの詳細パース
-- [ ] **エンティティ実装**: Home Assistant統合
+
+- [ ] **delta_pro3.py 実装**: デバイスクラスへの統合
+- [ ] **Protobuf パース実装**: 各 cmdId の詳細パース
+- [ ] **エンティティ実装**: Home Assistant 統合
 
 ---
 
@@ -305,4 +315,4 @@ def xor_decode_numpy(pdata: bytes, seq: int) -> bytes:
 - **テスト充実**: 実データでの徹底検証
 - **ログ機能**: デバッグ・監視のための詳細ログ
 
-このタスクの完了により、DP3の全てのProtobuf通信処理の基盤が確立されます。
+このタスクの完了により、DP3 の全ての Protobuf 通信処理の基盤が確立されます。

@@ -1,61 +1,86 @@
 # 製品要求仕様書 (PRD)
 
-## 1. 導入
+## EcoFlow Delta Pro 3 MQTT プロトコル統合
 
-### 1.1 プロジェクト名
+### 概要
 
-image-annotator-lib
+Home Assistant 向け EcoFlow Cloud カスタムコンポーネントにおける Delta Pro 3 デバイス対応のための製品要求仕様。本仕様は MQTT プロトコルベースの通信および Protocol Buffers を使用したメッセージ処理に基づく。
 
-### 1.2 プロジェクト目標
+### cmdId/cmdFunc 対応表 (完全版)
 
-- 多様な画像アノテーションタスク(スコアリング、タギング)のための再利用可能なPythonライブラリ提供。
-- 異なるアノテーションタイプ･モデル(ローカルMLモデル、**Google Gemini, OpenAI GPT, Anthropic Claudeなどの主要な外部Web APIを含む多様な**アノテーションソース)に対応する柔軟で拡張可能なアーキテクチャ提供。
-- 他アプリケーション･ワークフローとの容易な統合。
-- 高コード品質、テストカバレッジ、明確なドキュメント維持。
-- `scorer-wrapper-lib` と `tagger-wrapper-lib` 統合によるコード重複削減。
-- 統一API提供。
-- メンテナンス性向上。
-- 機能拡張容易化。
-- `ModelLoad`(メモリ管理)と`ModelRegistry`(クラス登録)標準化。
+以下は Delta Pro 3 デバイスで使用される MQTT メッセージの cmdId と cmdFunc の完全な対応表です。
 
-### 1.3 対象ユーザー
+#### 受信メッセージ (デバイス → Home Assistant)
 
-- 画像アノテーション機能が必要なアプリケーション開発者。
-- アノテーション付き画像データセットを扱う研究者。
-- 機械学習モデル用画像データを準備するデータサイエンティスト。
+| cmdFunc | cmdId | プロトコルバッファメッセージ型 | 送信元 | 機能概要 | 実装状況 |
+|---------|-------|---------------------------|--------|----------|----------|
+| `32` | `2` | `cmdFunc32_cmdId2_Report` | `3` (BMS) | CMS/BMS サマリー情報、充電制御関連データ | ✅ 実装済み |
+| `50` | `30` | `cmdFunc50_cmdId30_Report` | `3` (BMS) | BMS 詳細ランタイムデータ (セル電圧、温度、SOH等) | ✅ 実装済み |
+| `254` | `21` | `DisplayPropertyUpload` | デバイス | 表示用プロパティ (UI表示用の状態データ) | ✅ 実装済み |
+| `254` | `22` | `RuntimePropertyUpload` | デバイス | ランタイムプロパティ (頻繁更新データ) | ✅ 実装済み |
+| `254` | `23` | `cmdFunc254_cmdId23_Report` | デバイス | タイムスタンプ付きレポート | ✅ 実装済み |
+| `2` | `255` | `setReply_dp3` | デバイス | SET コマンドに対する応答 | ✅ 実装済み |
 
-## 2. 機能
+#### 送信メッセージ (Home Assistant → デバイス)
 
-### 2.1 主要機能
+| cmdFunc | cmdId | プロトコルバッファメッセージ型 | 送信先 | 機能概要 | 実装状況 |
+|---------|-------|---------------------------|--------|----------|----------|
+| `20` | `1` | (標準MQTT) | `32` (App) | 全プロパティ取得要求 (Get ALL Quotas) | ✅ 実装済み |
+| `各種` | `各種` | `set_dp3` | デバイス | 設定変更コマンド (AC出力、充電上限等) | ✅ 実装済み |
+| `調査中` | `調査中` | `RTCTimeSet` | デバイス | RTC時刻設定 | 🔄 調査中 |
+| `調査中` | `調査中` | `ProductNameSet` | デバイス | 製品名設定 | 🔄 調査中 |
 
-- 共通アノテーション形式サポート(モデル出力を通じて暗黙的に)。
-- 基本アノテーションツール(描画、編集) - ライブラリ自体は対象外、バックエンド処理に焦点。
-- データインポート/エクスポート機能(ユーザーアプリが担当、ライブラリは処理に焦点)。
-- カスタムアノテーションタイプ/機能のための拡張可能プラグインシステム(`ModelRegistry`とクラス継承、設定ファイルで実現)。
-- 複数画像･モデル(ローカル/Web API問わず、**多様なプロバイダーに対応したWeb API**)を一括処理のための統一 `annotate` 関数。
-- 効率的なローカルモデルロードとメモリ管理(`ModelLoad`)。
-- 集中型モデルクラス登録(`ModelRegistry`)。
-- 設定管理(`core/config.py`)。
-- 外部Web APIを利用したアノテーション機能のサポート。
+#### 未分類・追加実装予定
 
-## 3. プロジェクト概要
+| cmdFunc | cmdId | プロトコルバッファメッセージ型 | 機能概要 | 実装優先度 |
+|---------|-------|---------------------------|----------|------------|
+| `調査中` | `調査中` | `EventRecordReport` | イベント・エラーログ通知 | 中 |
+| `調査中` | `調査中` | `ProductNameGetAck` | 製品名取得応答 | 低 |
+| `調査中` | `調査中` | `RTCTimeGetAck` | RTC時刻取得応答 | 低 |
+| `調査中` | `調査中` | `SendMsgHart` | ハートビート | 高 |
 
-`image-annotator-lib` は `scorer-wrapper-lib` と `tagger-wrapper-lib` を統合し、ローカルの機械学習モデルや外部のWeb APIを利用して、画像アノテーション(タギング、スコアリング)機能を提供するPythonライブラリである。統一されたAPIを通じて、多様なアノテーションソースを透過的に扱うことを目指す。
+### 主要メッセージの詳細仕様
 
-# 変更履歴(2025-05-10)
+#### cmdFunc32_cmdId2_Report (CMS/BMS サマリー)
 
-## OpenAIApiAnnotatorの画像入力･構造化出力の型仕様統一
-- OpenAI APIの画像入力仕様(base64エンコード画像はimage_url: dict型で渡す)を明確化。
-- 型エラー解消･構造化出力モデルのAnnotationSchema統一により、保守性･拡張性を向上。
-- ユニットテスト追加で品質保証を強化。
+**重要フィールド:**
+- `volt4` (cms_batt_vol_mv): CMS バッテリー電圧 (mV)
+- `maxChargeSoc7` (cms_max_chg_soc_percent): 充電上限 SOC (%)
+- `soc15` (cms_batt_soc_percent): CMS バッテリー SOC (%)
+- `bmsIsConnt16`: BMS 接続状態配列
 
-## AnthropicApiAnnotatorのテスト用ToolUseBlockクラス名修正･型判定整理
-- テスト用ダミークラスのクラス名をToolUseBlockに合わせ、実装の型判定と一致させることでテストがパス。
-- _format_predictionsでAnnotationSchema型を許容し、構造化出力の一貫性･保守性を向上。
-- これにより、Anthropic系APIのユニットテストが全て正常に通過。
+#### cmdFunc50_cmdId30_Report (BMS 詳細データ)
 
-## annotator_webapi.py から OpenAIApiAnnotator･AnthropicApiAnnotator 分離のユーザー価値･目的
-- APIごとの実装が明確に分離され、拡張･保守が容易に。
-- 新API追加や既存APIの仕様変更時も、他APIへの影響を最小化。
-- テスト･型定義の一貫性向上により、品質保証が強化。
-- ユーザーは各APIの責務･依存関係を明確に把握でき、開発･運用の効率が向上。
+**重要フィールド:**
+- `remainCap12` (bms_remain_cap_mah): バッテリー残容量 (mAh)
+- `maxCellTemp18` (bms_max_cell_temp_c): 最高セル温度 (°C)
+- `minCellTemp19` (bms_min_cell_temp_c): 最低セル温度 (°C)
+- `maxCellVol16` (max_cell_vol_mv): 最大セル電圧 (mV)
+- `cellVol33` (cell_vol_mv): 各セル電圧配列 (mV)
+- `soh54` (bms_batt_soh_percent_float): バッテリー SOH (%)
+
+#### DisplayPropertyUpload (表示プロパティ)
+
+**主要カテゴリ:**
+- 電力関連: `pow_in_sum_w`, `pow_out_sum_w`
+- バッテリー: `bms_batt_soc`, `cms_max_chg_soc`
+- AC出力: `ac_out_freq_hz_config`, `xboost_en`
+- 表示設定: `lcd_light`, `energy_backup_state`
+
+### 実装要件
+
+#### 必須機能
+1. **リアルタイムデータ監視**: 全センサーデータの Home Assistant エンティティ化
+2. **デバイス制御**: AC出力、充電設定、表示設定の制御
+3. **エラーハンドリング**: 通信エラー、デバイスエラーの適切な処理
+4. **設定永続化**: デバイス設定の保存・復元
+
+#### パフォーマンス要件
+- **メッセージ処理遅延**: < 100ms
+- **MQTT接続維持**: 99.9% 可用性
+- **メモリ使用量**: < 50MB (通常運用時)
+
+#### セキュリティ要件
+- **暗号化通信**: AES-128-ECB ペイロード復号化
+- **認証情報保護**: アクセストークンの安全な保存
+- **通信ログ**: センシティブデータのマスキング
