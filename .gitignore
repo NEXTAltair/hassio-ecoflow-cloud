@@ -12,6 +12,10 @@ setup.cfg
 tests
 
 
-config.json
-mcp.json
-ioBroker_protobu_raw.txt
+**/config.json
+**/mcp.json
+**/ioBroker_protobu_raw.txt
+
+# 参考用リポジトリとテストデータ
+ioBroker.ecoflow-mqtt/
+scripts/delta_pro3_prepare_data_test/mock_protobuf_data.py
