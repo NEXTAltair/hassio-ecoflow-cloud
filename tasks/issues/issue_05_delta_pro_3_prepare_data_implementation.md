@@ -33,7 +33,7 @@ def _prepare_data(self, raw_data) -> dict[str, any]:
 
 ### **1. Protobuf デコード処理**
 
-- `ef_dp3_iobroker_pb2` を使用したメッセージデコード
+- [`ef_dp3_iobroker_pb2`](../../custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker_pb2.py) を使用したメッセージデコード
 - XOR デコード処理（必要に応じて）
 - エラーハンドリング
 
@@ -62,121 +62,213 @@ Protobuf で定義されている実際のフィールド名を使用:
 
 ## 実装方針
 
-### **Option A: 最小限の実装**
+### **選択されたアプローチ: ローカル独立スクリプト開発**
 
-既存のプロトコル解析ロジックを流用して、最小限の `_prepare_data` メソッドを実装
+`ecoflow_mqtt_parser` は MQTT 接続・認証・リアルタイム処理などの複雑性を持つため、**完全にローカルで動作する独立スクリプト**を作成して `_prepare_data` ロジックを開発・テストする。
 
-### **Option B: 完全なリファクタリング**
+### **利点**
 
-調査用スクリプトから移植された複雑な処理を整理し、標準的なパターンに修正
+- ✅ **高速開発**: HA 起動時間（数十秒〜数分）を回避
+- ✅ **デバッグ容易**: 独立環境での即座なログ確認・エラー追跡
+- ✅ **集中開発**: Protobuf 解析ロジックのみに専念
+- ✅ **制御テスト**: 任意のモックデータでテストケース作成
+
+### **開発フロー**
+
+1. **ローカルスクリプトでロジック開発・検証**
+2. **動作確認後、HA に統合**
 
 ## 作業項目
 
-### **Phase 1: 既存コードの分析**
+### **Phase 1: 独立テストスクリプトの作成**
 
-- [ ] 1. 調査用スクリプトの `_prepare_data` 相当処理の確認
+- [x] 1. **テストスクリプト環境構築**
 
-  - ファイル: `scripts/ecoflow_mqtt_parser.py` (またはそれに相当するファイル)
-  - 確認項目: XOR デコード、Protobuf デコード、メッセージタイプ判定
+  ```bash
+  scripts/delta_pro3_prepare_data_test/
+  ├── [`test_prepare_data.py`](../../scripts/delta_pro3_prepare_data_test/test_prepare_data.py)           # メインテストスクリプト
+  ├── [`mock_protobuf_data.py`](../../scripts/delta_pro3_prepare_data_test/mock_protobuf_data.py)          # モックデータ生成
+  ├── [`prepare_data_implementation.py`](../../scripts/delta_pro3_prepare_data_test/prepare_data_implementation.py) # _prepare_data 実装
+  └── test_cases/                    # テストケースデータ
+  ```
 
-- [ ] 2. Delta Pro 3 の protobuf 定義確認
+- [x] 2. **Proto 定義ファイルのインポート確認**
 
-  - ファイル: `custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker.proto`
-  - 確認項目: メッセージタイプ、フィールド定義、階層構造
+  - ファイル: [`custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker_pb2.py`](../../custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker_pb2.py)
+  - 確認項目: インポートパス、メッセージクラス、フィールド定義
 
-- [ ] 3. 他の internal デバイスの `_prepare_data` 実装確認
-  - 比較対象: Delta Pro, Delta 2 等の実装パターン
-  - 確認項目: Protobuf を使用している場合の処理方法
+- [x] 3. **モック Protobuf データの作成**
+  - 実際の受信データ: `b'\n\x9b\x03\n\x83\x03\x08\x00\x10\x01\x18\x02 \x00(\xe9...'`
+  - 各種パターンのテストデータ生成
+  - XOR エンコード・デコードのテストケース
 
-### **Phase 2: 実装**
+### **Phase 2: \_prepare_data ロジックの実装とテスト**
 
-- [ ] 4. Delta Pro 3 の `_prepare_data` メソッド実装
+- [x] 4. **基本 Protobuf 解析処理の実装**
 
-  - 機能: Protobuf バイナリデータをデコードして辞書を返す
-  - エラーハンドリング: デコード失敗時の適切な例外処理
-  - ログ出力: デバッグ用の適切なログ
+  - Protobuf メッセージのデコード
+  - メッセージタイプの特定
+  - フィールド値の抽出
 
-- [ ] 5. テスト実装
-  - 単体テスト: 実際の受信データでのデコード確認
-  - 統合テスト: Home Assistant でのエンティティ値表示確認
+- [x] 5. **XOR デコード処理の実装**
 
-### **Phase 3: 検証**
+  - `seq` 値を使用した XOR デコード
+  - エンコードタイプの判定
+  - エラーハンドリング
 
-- [ ] 6. sensors メソッド実行確認
+- [x] 6. **データ変換処理の実装**
 
-  - ブレークポイント: `def sensors(self, client: EcoflowApiClient)`
-  - 確認項目: メソッドが正常に呼ばれるか
+  - Protobuf フィールド → 辞書形式変換
+  - フィールド名マッピング
+  - データ型変換
 
-- [ ] 7. エンティティ値表示確認
+- [x] 7. **包括的テストの実行**
+  - 各種テストケースでの動作確認
+  - エラーケースのハンドリング確認
+  - パフォーマンス確認
 
+### **Phase 2.5: 実データテスト (新規スクリプト作成)**
+
+- [x] 7.1. **実データテスト用スクリプトの作成**
+
+  ```bash
+  scripts/delta_pro3_real_data_test/
+  ├── [main.py](../../scripts/delta_pro3_real_data_test/main.py)                    # メインスクリプト (201行, 実装完了)
+  ├── [mqtt_connection.py](../../scripts/delta_pro3_real_data_test/mqtt_connection.py)         # MQTT接続・認証 (256行, シンプル化完了)
+  ├── [prepare_data_processor.py](../../scripts/delta_pro3_real_data_test/prepare_data_processor.py)  # _prepare_dataロジック (307行, Phase 2移植完了)
+  ├── test_results/             # テスト結果保存ディレクトリ
+  │   ├── [real_data_test.log](../../scripts/delta_pro3_real_data_test/test_results/real_data_test.log)      # 実行ログ
+  │   ├── [raw_messages.jsonl](../../scripts/delta_pro3_real_data_test/test_results/raw_messages.jsonl)      # 受信メッセージ生ログ
+  │   └── [processed_data.jsonl](../../scripts/delta_pro3_real_data_test/test_results/processed_data.jsonl)    # 処理済みデータ
+  └── ([config.json](../../scripts/config.json): ../config.json を使用)
+  ```
+
+  **実装完了機能:**
+
+  - ✅ シンプル MQTT 接続（ANDROID 固定、UUID 不使用）
+  - ✅ Phase 2 実績ロジック移植
+  - ✅ リアルタイムデータ処理・表示
+  - ✅ JSONL 形式ログ保存
+  - ✅ 統計情報表示
+  - ✅ Ctrl+C 終了対応
+
+- [ ] 7.2. **実データでの動作確認**
+
+  ```bash
+  # 実行手順
+  cd scripts/delta_pro3_real_data_test
+  python [`main.py`](../../scripts/delta_pro3_real_data_test/main.py)
+  ```
+
+  **確認項目:**
+
+  - MQTT 接続成功
+  - メッセージ受信・デコード
+  - フィールド抽出確認
+  - データ品質検証
+
+- [ ] 7.3. **統合テストの実行**
+  - 複数メッセージタイプでの動作確認
+  - 成功率の測定・分析
+  - 問題点の特定・修正
+
+### **Phase 3: HA への統合**
+
+- [ ] 8. **Delta Pro 3 クラスでの \_prepare_data メソッド実装**
+
+  - ローカルスクリプトから本体への移植
+  - インポートパスの調整
+  - ログ設定の調整
+
+- [ ] 9. **HA 環境でのテスト**
+
+  - 実際の MQTT データでの動作確認
+  - sensors メソッド実行確認
+  - エンティティ値表示確認
+
+- [ ] 10. **最終検証**
   - Home Assistant UI でのセンサー値確認
-  - Developer Tools での状態確認
-
-- [ ] 8. ログエラーの解消確認
-  - `home-assistant.log` でのエラーメッセージ確認
+  - `home-assistant.log` でのエラー解消確認 (パスが特定できないためリンクなし)
   - 継続的な動作の確認
 
 ## 技術的考慮事項
 
-### **Protobuf メッセージタイプの特定**
+### **ローカルスクリプトでの検証項目**
 
 ```python
-# 受信データからのメッセージタイプ判定が必要
-# 例: DisplayPropertyUpload, RuntimePropertyUpload など
+# 1. Protobuf メッセージタイプの特定
+message_types = [
+    "DisplayPropertyUpload",
+    "RuntimePropertyUpload",
+    # ... その他
+]
+
+# 2. XOR デコード処理
+def xor_decode_test(data: bytes, seq: int) -> bytes:
+    # 実装とテスト
+
+# 3. フィールド抽出処理
+def extract_fields_test(decoded_message) -> dict:
+    # 実装とテスト
 ```
 
-### **XOR デコード処理**
+### **エラーハンドリング戦略**
 
 ```python
-# Delta Pro 3 特有の XOR エンコーディングへの対応
-# seq 値を使用したデコード処理
-```
-
-### **エラーハンドリング**
-
-```python
-# デコード失敗時の適切な処理
-# 部分的なデータでも可能な限り処理を継続
+# 段階的フォールバック処理
+try:
+    # 1. XORデコード試行
+    # 2. Protobufデコード試行
+    # 3. フィールド抽出試行
+except SpecificError:
+    # 特定エラーに対する処理
+except Exception:
+    # 汎用エラー処理
 ```
 
 ## 期待される効果
 
-### **直接的な効果**
+### **開発効率の向上**
+
+1. ✅ **即座のフィードバック**: ローカル実行による高速開発サイクル
+2. ✅ **独立デバッグ**: HA 環境の複雑さを排除した集中開発
+3. ✅ **確実な動作**: 十分なテスト後の HA 統合
+
+### **最終的な効果**
 
 1. ✅ sensors メソッドが正常に実行される
 2. ✅ Home Assistant でエンティティ値が表示される
 3. ✅ MQTT データが正常にデコードされる
 
-### **間接的な効果**
-
-1. ✅ 他の Protobuf デバイスへの実装パターン確立
-2. ✅ Delta Pro 3 の完全な機能利用
-3. ✅ 保守性・可読性の向上
-
 ## 関連ファイル
+
+### **新規作成ファイル**
+
+- [`scripts/delta_pro3_prepare_data_test/test_prepare_data.py`](../../scripts/delta_pro3_prepare_data_test/test_prepare_data.py)
+- [`scripts/delta_pro3_prepare_data_test/mock_protobuf_data.py`](../../scripts/delta_pro3_prepare_data_test/mock_protobuf_data.py)
+- [`scripts/delta_pro3_prepare_data_test/prepare_data_implementation.py`](../../scripts/delta_pro3_prepare_data_test/prepare_data_implementation.py)
 
 ### **実装対象**
 
-- `custom_components/ecoflow_cloud/devices/internal/delta_pro_3.py`
+- [`custom_components/ecoflow_cloud/devices/internal/delta_pro_3.py`](../../custom_components/ecoflow_cloud/devices/internal/delta_pro_3.py)
 
 ### **参考ファイル**
 
-- `custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker_pb2.py`
-- `custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker.proto`
-- `scripts/ecoflow_mqtt_parser.py` (調査用スクリプト)
+- [`custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker_pb2.py`](../../custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker_pb2.py)
+- [`custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker.proto`](../../custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker.proto)
 
 ### **テスト対象**
 
 - Home Assistant UI (センサー値表示)
-- `home-assistant.log` (エラーログ)
+- `home-assistant.log` (エラーログ) (パスが特定できないためリンクなし)
 
 ## 前提条件
 
-- Issue 04 で特定した根本原因の理解
+- Issue 04 で特定した根本原因の理解 (✅ 完了)
 - Protobuf ファイルの存在確認 (✅ 完了)
 - デバイス認識の正常動作確認 (✅ 完了)
 - MQTT データ受信の正常動作確認 (✅ 完了)
 
 ---
 
-**次のアクション**: Phase 1 の既存コード分析から開始
+**次のアクション**: Phase 1 の独立テストスクリプト環境構築から開始

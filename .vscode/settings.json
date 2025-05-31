@@ -11,5 +11,10 @@
   "pylint.importStrategy": "fromEnvironment",
   "pylint.args": [
     "--disable=C0114,C0115,C0116"
+  ],
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}",
+    "${workspaceFolder}/scripts/delta_pro3_prepare_data_test",
+    "${workspaceFolder}/scripts/delta_pro3_real_data_test"
   ]
 }

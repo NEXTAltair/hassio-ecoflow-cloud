@@ -105,6 +105,18 @@
                     "remoteRoot": "/usr/src/homeassistant"
                 }
             ]
+        },
+        {
+            "name": "Debug Delta Pro 3 Real Data Test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/delta_pro3_real_data_test/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/scripts/delta_pro3_real_data_test",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
         }
     ]
 }

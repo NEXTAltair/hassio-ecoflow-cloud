@@ -10,5 +10,8 @@ requirements.test.txt
 requirements.txt
 setup.cfg
 tests
-*/config.json
+
+
+config.json
 mcp.json
+ioBroker_protobu_raw.txt
