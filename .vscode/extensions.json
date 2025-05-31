@@ -2,6 +2,14 @@
   "recommendations": [
     "charliermarsh.ruff",
     "esbenp.prettier-vscode",
-    "ms-python.python"
+    "ms-python.python",
+    "wscats.search",
+    "gruntfuggly.todo-tree",
+    "cweijan.vscode-typora",
+    "masakit.zenkaku-hankaku",
+    "ms-python.mypy-type-checker",
+    "eamodio.gitlens",
+    "kawamataryo.copy-python-dotted-path",
+    "intellsmi.comment-translate"
   ]
 }
