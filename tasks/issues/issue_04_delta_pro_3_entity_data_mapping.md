@@ -292,9 +292,13 @@ def sensors(self, client: EcoflowApiClient) -> list[BaseSensorEntity]:
 
 ### 4. MQTT データ受信確認
 
-- [ ] 実際の MQTT メッセージ受信状況確認
-- [ ] `_prepare_data`メソッドでのデコード結果ログ出力
-- [ ] `device_data`へのデータ格納状況確認
+- [x] 4. MQTT データ受信の確認
+  - ブレークポイント設定: `custom_components/ecoflow_cloud/devices/__init__.py:133`
+  - 関数: `update_data(self, raw_data, data_type: str)`
+  - 確認結果: ✅ `data_type` と `self.device_info.data_topic` は完全に一致
+  - 確認結果: ✅ `raw_data` に Protobuf バイナリデータが正常に受信されている
+  - 確認結果: ❌ **`BaseDevice._prepare_data`が JSON デコードを試みて失敗**
+  - 根本原因: ✅ **Delta Pro 3 は Protobuf データなのに、BaseDevice は JSON を期待している**
 
 ## 想定される根本原因
 
@@ -374,3 +378,230 @@ Delta Pro 3 特有の XOR デコード処理に問題がある可能性。
 - `issue_01_dp3_mqtt_no_response.md` - MQTT 通信基盤
 - `issue_02_response_decode_interpret_error.md` - デコード問題
 - `issue_03_data_analysis_and_mapping_update.md` - データマッピング問題
+
+## 🚨 **真の問題点が判明**
+
+### **Protobuf は正常動作、問題はフィールド名の不一致**
+
+protobuf ファイル `ef_dp3_iobroker_pb2.py` を詳細確認した結果：
+
+- ✅ Protobuf インポートは正常
+- ✅ メッセージクラスは正常に定義されている
+- ❌ **フィールド名が delta_pro_3.py の期待値と完全に異なる**
+
+## 📊 **フィールド名の不一致例**
+
+### delta_pro_3.py で期待しているフィールド名：
+
+```python
+"bmsBattSoc"      # バッテリー残量
+"bmsDesignCap"    # 設計容量
+"powGetSum"       # 総出力電力
+"powInSum"        # 総入力電力
+```
+
+### 実際の protobuf フィールド名：
+
+```python
+"bms_batt_soc"    # アンダースコア区切り
+"bms_design_cap"  # アンダースコア区切り
+"pow_out_sum_w"   # 異なる名前 + アンダースコア
+"pow_in_sum_w"    # 異なる名前 + アンダースコア
+```
+
+## 🔍 **具体的な修正が必要な箇所**
+
+### 1. **バッテリー関連**
+
+| delta_pro_3.py | protobuf 実際        | 修正必要 |
+| -------------- | -------------------- | -------- |
+| `bmsBattSoc`   | `bms_batt_soc`       | ✅       |
+| `bmsDesignCap` | `bms_design_cap`     | ✅       |
+| `bmsFullCap`   | `bms_full_cap_mah`   | ✅       |
+| `bmsRemainCap` | `bms_remain_cap_mah` | ✅       |
+| `bmsBattSoh`   | `bms_batt_soh`       | ✅       |
+
+### 2. **電力関連**
+
+| delta_pro_3.py | protobuf 実際   | 修正必要 |
+| -------------- | --------------- | -------- |
+| `powGetSum`    | `pow_out_sum_w` | ✅       |
+| `powInSum`     | `pow_in_sum_w`  | ✅       |
+| `powGetAc`     | `pow_get_ac`    | ✅       |
+| `powGetAcIn`   | `pow_get_ac_in` | ✅       |
+
+### 3. **温度関連**
+
+| delta_pro_3.py   | protobuf 実際       | 修正必要 |
+| ---------------- | ------------------- | -------- |
+| `bmsMaxCellTemp` | `bms_max_cell_temp` | ✅       |
+| `bmsMinCellTemp` | `bms_min_cell_temp` | ✅       |
+| `bmsMaxMosTemp`  | `bms_max_mos_temp`  | ✅       |
+
+## 🛠️ **修正方針**
+
+### **命名規則の統一が必要**
+
+他の internal デバイスと proto ファイルの命名規則を確認した結果、以下の規則に従う必要があることが判明：
+
+#### **1. 他の internal デバイスの命名規則**
+
+**Delta Pro (`delta_pro.py`)**:
+
+```python
+# ドット記法（階層構造）
+"bmsMaster.soc"           # BMS Master の SOC
+"bmsMaster.designCap"     # BMS Master の設計容量
+"pd.wattsInSum"           # Power Delivery の入力電力合計
+"pd.wattsOutSum"          # Power Delivery の出力電力合計
+"inv.inputWatts"          # Inverter の入力電力
+```
+
+**Delta 2 (`delta2.py`)**:
+
+```python
+# アンダースコア + ドット記法
+"bms_bmsStatus.soc"       # BMS Status の SOC
+"bms_bmsStatus.designCap" # BMS Status の設計容量
+"pd.wattsInSum"           # Power Delivery の入力電力合計
+"pd.wattsOutSum"          # Power Delivery の出力電力合計
+```
+
+#### **2. Delta Pro 3 Proto ファイルの実際のフィールド名**
+
+**DisplayPropertyUpload メッセージ**:
+
+```proto
+optional float pow_in_sum_w = 3;      # 総入力電力
+optional float pow_out_sum_w = 4;     # 総出力電力
+optional float bms_batt_soc = 242;    # バッテリー SOC
+optional float bms_batt_soh = 243;    # バッテリー SOH
+optional uint32 bms_design_cap = 248; # バッテリー設計容量
+optional float pow_get_ac = 53;       # AC 出力電力
+optional float pow_get_ac_in = 54;    # AC 入力電力
+```
+
+#### **3. 修正すべきフィールド名マッピング**
+
+| 現在の delta_pro_3.py | Proto 実際値     | 正しい値        |
+| --------------------- | ---------------- | --------------- |
+| `"bmsBattSoc"`        | `bms_batt_soc`   | ✅ そのまま使用 |
+| `"powGetSum"`         | `pow_out_sum_w`  | ✅ そのまま使用 |
+| `"powInSum"`          | `pow_in_sum_w`   | ✅ そのまま使用 |
+| `"powGetAc"`          | `pow_get_ac`     | ✅ そのまま使用 |
+| `"powGetAcIn"`        | `pow_get_ac_in`  | ✅ そのまま使用 |
+| `"bmsDesignCap"`      | `bms_design_cap` | ✅ そのまま使用 |
+
+### **修正方針の結論**
+
+1. **✅ Proto フィールド名をそのまま使用**: Delta Pro 3 は他の internal デバイスと異なり、protobuf の生のフィールド名を直接使用する
+2. **❌ ドット記法は使用しない**: `bmsMaster.soc` のような階層構造ではなく、`bms_batt_soc` のようなフラット構造
+3. **✅ アンダースコア区切りを維持**: `pow_in_sum_w`, `bms_batt_soc` など
+
+### **即座に実行すべき修正**
+
+1. `delta_pro_3.py` の全センサーエンティティのフィールド名を protobuf の実際のフィールド名に変更
+2. 型エラーの修正（linter エラー解決）
+3. 不要な複雑な protobuf デコード処理の簡素化
+
+### **修正の優先度**
+
+1. **最高優先**: フィールド名の修正（データ取得の根本解決）
+2. **高優先**: 型エラーの修正（linter エラー解決）
+3. **中優先**: protobuf デコード処理の最適化
+
+## 📝 **次のアクション**
+
+1. ✅ protobuf の全フィールド名を抽出してマッピング表を作成 **完了**
+2. delta_pro_3.py の全エンティティ定義を正しいフィールド名に修正
+3. 型エラーを修正
+4. テスト実行
+
+**これで根本原因が特定できました。フィールド名の不一致が主要な問題です。**
+
+## 🔧 **デバッグ調査確認手順**
+
+### **Phase 1: デバイス認識の確認**
+
+- [x] 1. デバイスタイプマッピングの確認
+
+  - ブレークポイント設定: `custom_components/ecoflow_cloud/devices/registry.py:35`
+  - 関数: `get_device_by_type(device_type: str)`
+  - 確認結果: ✅ `device_type` が `"DELTA_PRO_3"` で正しく登録されている
+  - 確認結果: ✅ 戻り値が `internal_delta_pro_3.DeltaPro3` クラスで正常
+  - 確認結果: ✅ registry.py のマッピングは完全に正常、デバイス認識に問題なし
+
+- [x] 2. Internal DeltaPro3 クラスの実行確認
+
+  - ブレークポイント設定: `custom_components/ecoflow_cloud/devices/internal/delta_pro_3.py:43`
+  - 位置: `class DeltaPro3(BaseDevice):` 行 → `numbers` メソッドの return 文
+  - 確認結果: ✅ デバイスタイプ、名前、SN 入力後に`numbers`メソッドで正常に停止
+  - 確認結果: ✅ `self.device_data.device_type`、`name`、`sn`に想定通りの値が格納されている
+  - 確認結果: ✅ クラスのインスタンス化は正常に動作、セットアップフローに問題なし
+
+- [x] 3. sensors メソッドの実行確認
+  - ブレークポイント設定: `custom_components/ecoflow_cloud/devices/internal/delta_pro_3.py:44`
+  - 関数: `def sensors(self, client: EcoflowApiClient)`
+  - 確認結果: ❌ **sensors メソッドに到達していない**
+  - 確認結果: ❌ 代わりに`update_data`メソッドが繰り返し実行されている
+  - 推測: センサーエンティティが作成されていない可能性、エンティティ作成フェーズでの問題
+
+### **Phase 2: MQTT データフローの確認**
+
+- [x] 4. MQTT データ受信の確認
+  - ブレークポイント設定: `custom_components/ecoflow_cloud/devices/__init__.py:133`
+  - 関数: `update_data(self, raw_data, data_type: str)`
+  - 確認結果: ✅ `data_type` と `self.device_info.data_topic` は完全に一致
+  - 確認結果: ✅ `raw_data` に Protobuf バイナリデータが正常に受信されている
+  - 確認結果: ❌ **`BaseDevice._prepare_data`が JSON デコードを試みて失敗**
+  - 根本原因: ✅ **Delta Pro 3 は Protobuf データなのに、BaseDevice は JSON を期待している**
+
+## 🎯 **調査結果と根本原因の特定**
+
+### **✅ 確認できたこと**
+
+1. **デバイス認識**: registry.py でのマッピングは完全に正常
+2. **クラスインスタンス化**: DeltaPro3 クラスは正常にインスタンス化される
+3. **MQTT データ受信**: Protobuf バイナリデータは正常に受信されている
+4. **データトピック**: `data_type` と `self.device_info.data_topic` は完全に一致
+
+### **❌ 根本原因**
+
+**Delta Pro 3 で `_prepare_data` メソッドがオーバーライドされていない**
+
+#### **問題の詳細:**
+
+1. Delta Pro 3 は **Protobuf バイナリデータ**を受信する
+2. `BaseDevice._prepare_data` は **JSON データ**を期待してデコードを試行する
+3. JSON パースが失敗し、例外発生または None 返却
+4. `self.data.update_data(raw)` で空データまたは例外
+5. エンティティ初期化が完了しない
+6. **sensors メソッドが呼ばれない**
+
+#### **具体的な失敗箇所:**
+
+```python
+# BaseDevice._prepare_data の処理
+def _prepare_data(self, raw_data) -> dict[str, any]:
+    try:
+        payload = raw_data.decode("utf-8", errors="ignore")  # ❌ Protobuf に UTF-8 デコードを適用
+        return json.loads(payload)                           # ❌ JSON パースを試行
+    except Exception as error1:
+        _LOGGER.error(f"constant: {error1}. Ignoring message...")  # ❌ エラーでNone返却
+```
+
+### **解決に必要な作業**
+
+Delta Pro 3 に **Protobuf データ専用の `_prepare_data` メソッド**をオーバーライド実装する必要がある。
+
+## 📋 **Issue 04 完了**
+
+**調査目的**: Delta Pro 3 エンティティから値を取得できない問題の根本原因特定
+**調査結果**: ✅ **根本原因特定完了**
+**次のアクション**: `_prepare_data` メソッドのオーバーライド実装 → **Issue 05** で対応
+
+---
+
+**Issue 04 で特定した問題:** Delta Pro 3 で `_prepare_data` メソッドが実装されておらず、BaseDevice の JSON パーサーが Protobuf データに対して実行されて失敗している。
+
+**次の Issue で解決すべき課題:** Delta Pro 3 専用の Protobuf デコード処理を `_prepare_data` メソッドとして実装する。
