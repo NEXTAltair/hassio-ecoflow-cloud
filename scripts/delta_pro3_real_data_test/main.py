@@ -24,7 +24,7 @@ from prepare_data_processor import create_processor
 
 # ログ設定
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),

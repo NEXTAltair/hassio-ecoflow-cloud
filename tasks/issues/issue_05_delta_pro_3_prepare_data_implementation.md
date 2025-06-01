@@ -15,7 +15,7 @@ Delta Pro 3 で `_prepare_data` メソッドがオーバーライドされてお
 - **データ形式**: Protobuf バイナリデータ
 - **データサイズ**: 約 400 バイト
 - **データ例**: `b'\n\x9b\x03\n\x83\x03\x08\x00\x10\x01\x18\x02 \x00(\xe9...'`
-- **データトピック**: `/app/device/property/MR51ZJS4PG6C0181` (正常)
+- **データトピック**: `/app/device/property/DEVICE_SN` (正常)
 
 ### **現在の失敗処理**
 
@@ -171,6 +171,10 @@ Protobuf で定義されている実際のフィールド名を使用:
   - 複数メッセージタイプでの動作確認
   - 成功率の測定・分析
   - 問題点の特定・修正
+  - [実データテストログ (real_data_test.log)](../../scripts/delta_pro3_real_data_test/test_results/real_data_test.log)
+  - [生メッセージ (raw_messages.jsonl)](../../scripts/delta_pro3_real_data_test/test_results/raw_messages.jsonl)
+  - [処理済みデータ (processed_data.jsonl)](../../scripts/delta_pro3_real_data_test/test_results/processed_data.jsonl)
+  - **現象概要:** 一部メッセージ（例: cmdFunc=32, cmdId=2 や cmdFunc=254, cmdId=21 など）で MessageToDict でフィールドは得られているのに、最終出力が 0 件またはごく一部しか抽出されない現象が継続。主要なバッテリー情報や電力情報が安定して抽出できない場合が多い。詳細な原因分析・解決は新規タスク [ISSUE_06_delta_pro3_prepare_data_decode_failure.md](ISSUE_06_delta_pro3_prepare_data_decode_failure.md) で行う。
 
 ### **Phase 3: HA への統合**
 
@@ -271,4 +275,23 @@ except Exception:
 
 ---
 
-**次のアクション**: Phase 1 の独立テストスクリプト環境構築から開始
+** 未完了**: Delta Pro 3 の `_prepare_data` メソッド実装を実装したが複合処理がほとんどできていない
+
+## 【2024-06-01 現状：一部修正済み・追加調査中】
+
+### 現状まとめ
+
+- 一部のメッセージ（cmdFunc=32, cmdId=50）は安定してデコード・フィールド抽出できている。
+- しかし、cmdFunc=32, cmdId=2 や cmdFunc=254, cmdId=21 など多くのメッセージで、MessageToDict でフィールドは得られているのに最終出力が 0 件、またはごく一部しか抽出されない現象が継続。
+- 主要なバッテリー情報や電力情報が安定して抽出できない場合が多い。
+- 失敗時の詳細な値・型・内容がログに出ていないため、どこで除外されているか不明瞭。
+
+### 次のアクション
+
+- MessageToDict 直後の全フィールド・値・型を詳細ログ出力するよう修正し、どこで値が消えるか特定する。
+- 変換・フィルタロジックを一時的に緩和し、全フィールドを出力してみる。
+- 失敗例の raw/payload/MessageToDict 内容をサンプル保存し、どこで値が消えるか特定。
+- cmdFunc/cmdId ごとのフィールドマッピング・変換ルールを再整理。
+- 必要に応じて ioBroker JS 実装の該当箇所を再調査。
+
+---

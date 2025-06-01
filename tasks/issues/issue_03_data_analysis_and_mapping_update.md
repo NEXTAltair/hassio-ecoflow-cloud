@@ -192,3 +192,374 @@ Issue 02「受信メッセージの解析・デコード」の完了により、
 - 引き続き `get_reply` の安定的な受信と、その内容 (特にフォーマットバイト `0x3c` の意味) の解明が重要。
 
 - [ ] `RuntimePropertyUpload` (`cmdId:22, cmdFunc:254`) のフィールド詳細解析と `.proto` ファイルへの反映。
+
+### cmdId/cmdFunc → 型名（Protobuf/論理名）完全対応表（2024-06-01 時点, 全情報源突合）
+
+| cmdId | cmdFunc | 型名（Protobuf/論理名）            | 用途・備考                              |
+| ----- | ------- | ---------------------------------- | --------------------------------------- |
+| 21    | 254     | DisplayPropertyUpload              | 定期アップロード（UI 表示用プロパティ） |
+| 22    | 254     | RuntimePropertyUpload              | 詳細ランタイムアップロード              |
+| 50    | 32      | cmdFunc50_cmdId30_Report           | BMS 詳細ランタイム                      |
+| 2     | 32      | cmdFunc32_cmdId2_Report            | CMS/BMS サマリー                        |
+| 23    | 254     | cmdFunc254_cmdId23_Report          | タイムスタンプ付きレポート              |
+| 17    | 254     | setDp3                             | 設定コマンド                            |
+| 18    | 254     | setReplyDp3                        | 設定コマンド応答                        |
+| 255   | 2       | setReply_dp3                       | SET コマンドに対する応答（汎用）        |
+| 1     | 20      | （標準 MQTT, Get ALL Quotas）      | 全プロパティ取得要求（応答は複数型）    |
+| -     | -       | RTCTimeSet                         | RTC 時刻設定                            |
+| -     | -       | RTCTimeSetAck                      | RTC 時刻設定応答                        |
+| -     | -       | ProductNameSet                     | 製品名設定                              |
+| -     | -       | ProductNameSetAck                  | 製品名設定応答                          |
+| -     | -       | ProductNameGet                     | 製品名取得要求                          |
+| -     | -       | ProductNameGetAck                  | 製品名取得応答                          |
+| -     | -       | RTCTimeGet                         | RTC 時刻取得要求                        |
+| -     | -       | RTCTimeGetAck                      | RTC 時刻取得応答                        |
+| -     | -       | EventRecordReport                  | イベント・エラーログ通知                |
+| -     | -       | EventInfoReportAck                 | イベント応答                            |
+| -     | -       | SendMsgHart                        | ハートビート                            |
+| -     | -       | Header/Send_Header_Msg             | 共通ヘッダー構造                        |
+| -     | -       | TimeTaskItemV2/TimeTaskParamDetail | タイマー予約関連                        |
+
+- cmdId/cmdFunc の組み合わせが明確なものは全て網羅。
+- 未分類・調査中の型も、.proto 定義・js 実装・ドキュメントから抽出し記載。
+- js 実装や実データで観測された新規型・未解明型も随時追加。
+- DisplayPropertyUpload/RuntimePropertyUpload/cmdFunc50_cmdId30_Report/cmdFunc32_cmdId2_Report/setDp3/setReplyDp3 等、全ての主要型を含む。
+- Get ALL Quotas 等の特殊コマンドも記載（応答は複数型）。
+
+#### DisplayPropertyUpload（全フィールド網羅, ioBroker 実装/deltapro3.md 反映）
+
+| フィールド名                | 型     | 単位/範囲   | enum/状態値・選択肢 | 説明                                          | 備考       |
+| --------------------------- | ------ | ----------- | ------------------- | --------------------------------------------- | ---------- |
+| plugInInfo_4p8_1Resv        | array  |             |                     | plug in info_4p8_1 resv                       | diagnostic |
+| plugInInfo_4p8_2Resv        | array  |             |                     | plug in info_4p8_2 resv                       | diagnostic |
+| plugInInfo_5p8Resv          | array  |             |                     | plug in info_5p8 resv                         | diagnostic |
+| errcode                     | string |             |                     | errcode                                       |            |
+| utcTimezoneId               | string |             |                     | utc timezone id                               |            |
+| pcsFanLevel                 | string |             |                     | pcs fan level                                 |            |
+| plugInInfo_5p8Detail        | string |             |                     | plug in info_5p8 detail                       |            |
+| bmsErrCode                  | string |             |                     | bms err code                                  |            |
+| plugInInfo_4p8_1Detail      | string |             |                     | plug in info_4p8_1 detail                     |            |
+| plugInInfo_4p8_2Detail      | string |             |                     | plug in info_4p8_2 detail                     |            |
+| plugInInfo_4p8_1Sn          | string |             |                     | SN of the device connected to Extra Battery 1 |            |
+| plugInInfo_4p8_1FirmVer     | string |             |                     | plug in info_4p8_1 firm ver                   |            |
+| plugInInfo_4p8_2Sn          | string |             |                     | SN of the device connected to Extra Battery 2 |            |
+| plugInInfo_4p8_2FirmVer     | string |             |                     | plug in info_4p8_2 firm ver                   |            |
+| plugInInfo_5p8DsgChg        | string |             |                     | Charging/Discharging type of Power In/Out     |            |
+| plugInInfo_5p8Sn            | string |             |                     | SN of the device connected to Power In/Out    |            |
+| plugInInfo_5p8FirmVer       | string |             |                     | plug in info_5p8 firm ver                     |            |
+| pdErrCode                   | string |             |                     | pd err code                                   |            |
+| llcErrCode                  | string |             |                     | llc err code                                  |            |
+| mpptErrCode                 | string |             |                     | mppt err code                                 |            |
+| plugInInfo_5p8ErrCode       | string |             |                     | plug in info_5p8 err code                     |            |
+| plugInInfo_4p8_1ErrCode     | string |             |                     | plug in info_4p8_1 err code                   |            |
+| plugInInfo_4p8_2ErrCode     | string |             |                     | plug in info_4p8_2 err code                   |            |
+| llcInvErrCode               | string |             |                     | llc inv err code                              |            |
+| powInSumW                   | number | 0-8000 W    |                     | Total input power                             |            |
+| powOutSumW                  | number | 0-8000 W    |                     | Total output power                            |            |
+| energyBackupStartSoc        | number | 0-100 %     |                     | Backup reserve level                          |            |
+| powGetQcusb1                | number | 0-120 W     |                     | Real-time power of the USB 1 port             |            |
+| powGetQcusb2                | number | 0-120 W     |                     | Real-time power of the USB 2 port             |            |
+| powGetTypec1                | number | 0-4000 W    |                     | Real-time power of Type-C port 1              |            |
+| powGetTypec2                | number | 0-4000 W    |                     | Real-time power of Type-C port 2              |            |
+| acAlwaysOnMiniSoc           | number | 0-100 %     |                     | Sets the minimum SOC to enable AC Always-on   |            |
+| powGetPvH                   | number | 0-1600 W    |                     | Real-time high-voltage PV power               |            |
+| powGetPvL                   | number | 0-1000 W    |                     | Real-time low-voltage PV power                |            |
+| powGet_12v                  | number | 0-60 W      |                     | Real-time 12V power                           |            |
+| powGet_24v                  | number | 0-400 W     |                     | Real-time 24V power                           |            |
+| powGetLlc                   | number | 0-8000 W    |                     | pow get llc                                   |            |
+| powGetAc                    | number | 0-8000 W    |                     | Real-time AC power                            |            |
+| powGetAcIn                  | number | 0-8000 W    |                     | Real-time AC input power                      |            |
+| powGetAcHvOut               | number | 0-8000 W    |                     | Real-time grid power                          |            |
+| powGetAcLvOut               | number | 0-4000 W    |                     | Real-time low-voltage AC output power         |            |
+| powGetAcLvTt30Out           | number | 0-8000 W    |                     | Real-time power of the low-voltage AC output  |            |
+| powGet_5p8                  | number | 0-4000 W    |                     | Real-time power of the Power In/Out port      |            |
+| utcTimezone                 | number | -1200-1200  |                     | utc timezone                                  |            |
+| powGetBms                   | number | 0-8000 W    |                     | pow get bms                                   |            |
+| powGet_4p8_1                | number | 0-4000 W    |                     | Real-time power of Extra Battery Port 1       |            |
+| powGet_4p8_2                | number | 0-4000 W    |                     | Real-time power of Extra Battery Port 2       |            |
+| acOutFreq                   | number | 49-61 Hz    |                     | AC output frequency                           |            |
+| plugInInfoPvHChgVolMax      | number | 0-150 V     |                     | Maximum charging voltage of HV PV port        |            |
+| plugInInfoPvHChgAmpMax      | number | 0-15 A      |                     | Maximum charging current of HV PV port        |            |
+| bmsBattSoc                  | number | 0-100 %     |                     | SOC of the main battery                       |            |
+| bmsBattSoh                  | number | 0-100 %     |                     | SOH of the main battery                       |            |
+| bmsDesignCap                | number | 0-80000 mAh |                     | Battery capacity                              |            |
+| bmsDsgRemTime               | number | 0-15999 min |                     | Remaining discharging time                    |            |
+| bmsChgRemTime               | number | 0-15999 min |                     | Remaining charging time of the main battery   |            |
+| bmsMinCellTemp              | number | 0-80 °C     |                     | Minimum temperature of the main battery       |            |
+| bmsMaxCellTemp              | number | 0-80 °C     |                     | Temperature of the main battery               |            |
+| bmsMinMosTemp               | number | 0-100 °C    |                     | bms min mos temp                              |            |
+| bmsMaxMosTemp               | number | 0-100 °C    |                     | bms max mos temp                              |            |
+| cmsBattSoc                  | number | 0-100 %     |                     | Overall SOC                                   |            |
+| cmsBattSoh                  | number | 0-100 %     |                     | Overall SOH                                   |            |
+| cmsDsgRemTime               | number | 0-15999 min |                     | Remaining discharging time                    |            |
+| cmsChgRemTime               | number | 0-15999 min |                     | Remaining charging time                       |            |
+| timeTaskChangeCnt           | number | 0-60        |                     | time task change cnt                          |            |
+| generatorPvHybridModeSocMax | number | 0-100 %     |                     | generator pv hybrid mode soc max              |            |
+| generatorCareModeStartTime  | number | 0-2000 h    |                     | generator care mode start time                |            |
+| plugInInfoAcInFeq           | number | 50-60 Hz    |                     | AC input frequency                            |            |
+| plugInInfoPvLChgVolMax      | number | 0-60 V      |                     | Maximum charging voltage of LV PV port        |            |
+| plugInInfoPvLChgAmpMax      | number | 0-20 A      |                     | Maximum charging current of LV PV port        |            |
+| plugInInfo_5p8DsgPowMax     | number | 0-4000 W    |                     | Maximum discharging power of Power In/Out     |            |
+| plugInInfoAcOutDsgPowMax    | number | 0-4000 W    |                     | Maximum AC discharging power                  |            |
+| plugInInfo_5p8ChgHalPowMax  | number | 0-4000 W    |                     | Maximum AC charging power In/Out port         |            |
+| plugInInfoAcInChgHalPowMax  | number | 0-2000 W    |                     | Maximum AC charging power                     |            |
+
+#### RuntimePropertyUpload（全フィールド網羅, ioBroker 実装/deltapro3.md 反映）
+
+| フィールド名                | 型         | 単位/範囲   | enum/状態値・選択肢 | 説明                                          | 備考 |
+| --------------------------- | ---------- | ----------- | ------------------- | --------------------------------------------- | ---- |
+| acPhaseType                 | diagnostic |             | 0:OK?               | ac phase type                                 |      |
+| pcsWorkMode                 | diagnostic |             | 0:OK?               | pcs work mode                                 |      |
+| plugInInfoAcOutType         | diagnostic |             | 0:OK?               | plug in info ac out type                      |      |
+| mpptMonitorFlag             | diagnostic |             | 0:OK?               | mppt monitor flag                             |      |
+| bmsBalState                 | diagnostic |             | 0:OK?               | bms bal state                                 |      |
+| bmsAlmState                 | diagnostic |             | 0:OK?               | bms alm state                                 |      |
+| bmsProState                 | diagnostic |             | 0:OK?               | bms pro state                                 |      |
+| bmsFltState                 | diagnostic |             | 0:OK?               | bms flt state                                 |      |
+| bmsAlmState_2               | diagnostic |             | 0:OK?               | bms alm state_2                               |      |
+| bmsProState_2               | diagnostic |             | 0:OK?               | bms pro state_2                               |      |
+| ...                         | ...        | ...         | ...                 | ...                                           | ...  |
+| errcode                     | string     |             |                     | errcode                                       |      |
+| utcTimezoneId               | string     |             |                     | utc timezone id                               |      |
+| pcsFanLevel                 | string     |             |                     | pcs fan level                                 |      |
+| plugInInfo_5p8Detail        | string     |             |                     | plug in info_5p8 detail                       |      |
+| bmsErrCode                  | string     |             |                     | bms err code                                  |      |
+| plugInInfo_4p8_1Detail      | string     |             |                     | plug in info_4p8_1 detail                     |      |
+| plugInInfo_4p8_2Detail      | string     |             |                     | plug in info_4p8_2 detail                     |      |
+| plugInInfo_4p8_1Sn          | string     |             |                     | SN of the device connected to Extra Battery 1 |      |
+| plugInInfo_4p8_1FirmVer     | string     |             |                     | plug in info_4p8_1 firm ver                   |      |
+| plugInInfo_4p8_2Sn          | string     |             |                     | SN of the device connected to Extra Battery 2 |      |
+| plugInInfo_4p8_2FirmVer     | string     |             |                     | plug in info_4p8_2 firm ver                   |      |
+| plugInInfo_5p8DsgChg        | string     |             |                     | Charging/Discharging type of Power In/Out     |      |
+| plugInInfo_5p8Sn            | string     |             |                     | SN of the device connected to Power In/Out    |      |
+| plugInInfo_5p8FirmVer       | string     |             |                     | plug in info_5p8 firm ver                     |      |
+| pdErrCode                   | string     |             |                     | pd err code                                   |      |
+| llcErrCode                  | string     |             |                     | llc err code                                  |      |
+| mpptErrCode                 | string     |             |                     | mppt err code                                 |      |
+| plugInInfo_5p8ErrCode       | string     |             |                     | plug in info_5p8 err code                     |      |
+| plugInInfo_4p8_1ErrCode     | string     |             |                     | plug in info_4p8_1 err code                   |      |
+| plugInInfo_4p8_2ErrCode     | string     |             |                     | plug in info_4p8_2 err code                   |      |
+| llcInvErrCode               | string     |             |                     | llc inv err code                              |      |
+| powInSumW                   | number     | 0-8000 W    |                     | Total input power                             |      |
+| powOutSumW                  | number     | 0-8000 W    |                     | Total output power                            |      |
+| energyBackupStartSoc        | number     | 0-100 %     |                     | Backup reserve level                          |      |
+| powGetQcusb1                | number     | 0-120 W     |                     | Real-time power of the USB 1 port             |      |
+| powGetQcusb2                | number     | 0-120 W     |                     | Real-time power of the USB 2 port             |      |
+| powGetTypec1                | number     | 0-4000 W    |                     | Real-time power of Type-C port 1              |      |
+| powGetTypec2                | number     | 0-4000 W    |                     | Real-time power of Type-C port 2              |      |
+| acAlwaysOnMiniSoc           | number     | 0-100 %     |                     | Sets the minimum SOC to enable AC Always-on   |      |
+| powGetPvH                   | number     | 0-1600 W    |                     | Real-time high-voltage PV power               |      |
+| powGetPvL                   | number     | 0-1000 W    |                     | Real-time low-voltage PV power                |      |
+| powGet_12v                  | number     | 0-60 W      |                     | Real-time 12V power                           |      |
+| powGet_24v                  | number     | 0-400 W     |                     | Real-time 24V power                           |      |
+| powGetLlc                   | number     | 0-8000 W    |                     | pow get llc                                   |      |
+| powGetAc                    | number     | 0-8000 W    |                     | Real-time AC power                            |      |
+| powGetAcIn                  | number     | 0-8000 W    |                     | Real-time AC input power                      |      |
+| powGetAcHvOut               | number     | 0-8000 W    |                     | Real-time grid power                          |      |
+| powGetAcLvOut               | number     | 0-4000 W    |                     | Real-time low-voltage AC output power         |      |
+| powGetAcLvTt30Out           | number     | 0-8000 W    |                     | Real-time power of the low-voltage AC output  |      |
+| powGet_5p8                  | number     | 0-4000 W    |                     | Real-time power of the Power In/Out port      |      |
+| utcTimezone                 | number     | -1200-1200  |                     | utc timezone                                  |      |
+| powGetBms                   | number     | 0-8000 W    |                     | pow get bms                                   |      |
+| powGet_4p8_1                | number     | 0-4000 W    |                     | Real-time power of Extra Battery Port 1       |      |
+| powGet_4p8_2                | number     | 0-4000 W    |                     | Real-time power of Extra Battery Port 2       |      |
+| acOutFreq                   | number     | 49-61 Hz    |                     | AC output frequency                           |      |
+| plugInInfoPvHChgVolMax      | number     | 0-150 V     |                     | Maximum charging voltage of HV PV port        |      |
+| plugInInfoPvHChgAmpMax      | number     | 0-15 A      |                     | Maximum charging current of HV PV port        |      |
+| bmsBattSoc                  | number     | 0-100 %     |                     | SOC of the main battery                       |      |
+| bmsBattSoh                  | number     | 0-100 %     |                     | SOH of the main battery                       |      |
+| bmsDesignCap                | number     | 0-80000 mAh |                     | Battery capacity                              |      |
+| bmsDsgRemTime               | number     | 0-15999 min |                     | Remaining discharging time                    |      |
+| bmsChgRemTime               | number     | 0-15999 min |                     | Remaining charging time                       |      |
+| bmsMinCellTemp              | number     | 0-80 °C     |                     | Minimum temperature of the main battery       |      |
+| bmsMaxCellTemp              | number     | 0-80 °C     |                     | Temperature of the main battery               |      |
+| bmsMinMosTemp               | number     | 0-100 °C    |                     | bms min mos temp                              |      |
+| bmsMaxMosTemp               | number     | 0-100 °C    |                     | bms max mos temp                              |      |
+| cmsBattSoc                  | number     | 0-100 %     |                     | Overall SOC                                   |      |
+| cmsBattSoh                  | number     | 0-100 %     |                     | Overall SOH                                   |      |
+| cmsDsgRemTime               | number     | 0-15999 min |                     | Remaining discharging time                    |      |
+| cmsChgRemTime               | number     | 0-15999 min |                     | Remaining charging time                       |      |
+| timeTaskChangeCnt           | number     | 0-60        |                     | time task change cnt                          |      |
+| generatorPvHybridModeSocMax | number     | 0-100 %     |                     | generator pv hybrid mode soc max              |      |
+| generatorCareModeStartTime  | number     | 0-2000 h    |                     | generator care mode start time                |      |
+| plugInInfoAcInFeq           | number     | 50-60 Hz    |                     | AC input frequency                            |      |
+| plugInInfoPvLChgVolMax      | number     | 0-60 V      |                     | Maximum charging voltage of LV PV port        |      |
+| plugInInfoPvLChgAmpMax      | number     | 0-20 A      |                     | Maximum charging current of LV PV port        |      |
+| plugInInfo_5p8DsgPowMax     | number     | 0-4000 W    |                     | Maximum discharging power of Power In/Out     |      |
+| plugInInfoAcOutDsgPowMax    | number     | 0-4000 W    |                     | Maximum AC discharging power                  |      |
+| plugInInfo_5p8ChgHalPowMax  | number     | 0-4000 W    |                     | Maximum AC charging power In/Out port         |      |
+| plugInInfoAcInChgHalPowMax  | number     | 0-2000 W    |                     | Maximum AC charging power                     |      |
+
+#### setReplyDp3（設定コマンド応答, 全フィールド網羅, ioBroker/Python/proto 定義反映）
+
+| フィールド名            | 型     | 単位/範囲                               | enum/状態値・選択肢 | 説明                                               | 備考          |
+| ----------------------- | ------ | --------------------------------------- | ------------------- | -------------------------------------------------- | ------------- |
+| actionId                | int    |                                         |                     | コマンド実行 ID（リクエストと対応）                |               |
+| configOk                | bool   |                                         | true/false          | 設定反映成功フラグ                                 |               |
+| cfgPowerOff             | switch |                                         | 0:off, 1:on         | Shut down the entire device                        |               |
+| enBeep                  | switch |                                         | 0:off, 1:on         | Beeper on/off                                      |               |
+| acStandbyTime           | level  | 0-1440 min                              | see states          | AC timeout (min)                                   | select 有     |
+| dcStandbyTime           | level  | 0-1440 min                              | see states          | DC timeout (min)                                   | select 有     |
+| screenOffTime           | level  | 0-1800 s                                | see states          | Screen timeout (s)                                 | select 有     |
+| devStandbyTime          | level  | 0-1440 min                              | see states          | Device timeout (min)                               | select 有     |
+| lcdLight                | level  | 0-100 %                                 |                     | Screen brightness                                  | mult:0.390625 |
+| cfgHvAcOutOpen          | switch |                                         | 0:off, 1:on         | high-voltage AC output switch                      |               |
+| cfgLvAcOutOpen          | switch |                                         | 0:off, 1:on         | low-voltage AC output switch                       |               |
+| cfgDc12vOutOpen         | switch |                                         | 0:off, 1:on         | 12V output switch                                  |               |
+| xboostEn                | switch |                                         | 0:off, 1:on         | X-Boost switch                                     |               |
+| cmsMaxChgSoc            | level  | 50-100 %                                |                     | Charge limit                                       |               |
+| cmsMinDsgSoc            | level  | 0-30 %                                  |                     | Discharge limit                                    |               |
+| plugInInfoPvLDcAmpMax   | number | 0-15 A                                  |                     | Maximum input current of the low-voltage PV port   |               |
+| plugInInfoPvHDcAmpMax   | number | 0-10 A                                  |                     | Maximum input current of the high-voltage PV port  |               |
+| plugInInfoAcInChgPowMax | number | 100-1500 W                              |                     | Maximum AC input power for charging                |               |
+| plugInInfo_5p8ChgPowMax | number | 500-4000 W                              |                     | Maximum charging power of the Power In/Out port    |               |
+| cmsOilSelfStart         | switch |                                         | 0:off, 1:on         | Smart Generator auto start/stop switch             |               |
+| cmsOilOnSoc             | level  | 10-30 %                                 |                     | SOC for automatically starting the Smart Generator |               |
+| cmsOilOffSoc            | level  | 50-100 %                                |                     | SOC for automatically stopping the Smart Generator |               |
+| llc_GFCIFlag            | switch |                                         | 0:off, 1:on         | GFCI switch                                        |               |
+| acEnergySavingOpen      | switch |                                         | 0:off, 1:on         | AC energy-saving mode switch                       |               |
+| multiBpChgDsgMode       | select | 0:default, 1:automatic, 2:main bat prio | see states          | Battery charging/discharging order                 |               |
+| lowDischargeLimitCmd    | int    |                                         |                     | 低放電制限コマンド（詳細不明, not EF-API）         |               |
+| unknown167              | int    |                                         |                     | 未解明フィールド                                   |               |
+
+#### cmdFunc50_cmdId30_Report（BMS 詳細ランタイム, 全フィールド網羅, .proto 定義・実データ反映）
+
+| フィールド名                | 型              | 単位/範囲 | enum/状態値・選択肢  | 説明                                         | 備考       |
+| --------------------------- | --------------- | --------- | -------------------- | -------------------------------------------- | ---------- |
+| bms_flt_state               | sint32          |           | 0:OK                 | BMS fault state                              |            |
+| bms_pro_state               | sint32          |           | 0:OK                 | BMS protection state                         |            |
+| bms_alm_state               | sint32          |           | 0:OK                 | BMS alarm state                              |            |
+| bms_bal_state               | sint32          |           | 0:OK                 | BMS balance state                            |            |
+| unknown5                    | uint64          |           |                      | BMS 関連 ID/カウンタ?                        |            |
+| unknown6                    | sint32          |           |                      |                                              |            |
+| bms_batt_vol                | sint32          | mV        |                      | メインバッテリー電圧（例: 51510=51.510V）    |            |
+| bms_batt_amp                | sint32          | mA        |                      | メインバッテリー電流（例: -8938=-8.938A）    | 放電時負値 |
+| bms_max_cell_temp_dup       | sint32          | °C        |                      | 最高セル温度（maxCellTemp18 と重複）         |            |
+| unknown10                   | sint32          |           |                      |                                              |            |
+| bms_design_cap_mah_dup      | uint32          | mAh       |                      | バッテリー設計容量（unknown24 と重複）       |            |
+| bms_remain_cap_mah          | uint32          | mAh       |                      | バッテリー残容量                             |            |
+| bms_full_cap_mah            | uint32          | mAh       |                      | バッテリー満充電容量                         |            |
+| unknown14                   | sint32          |           |                      |                                              |            |
+| bms_batt_soh_percent_int    | uint32          | %         |                      | バッテリー SOH（整数, soh54 と比較）         |            |
+| max_cell_vol_mv             | uint32          | mV        |                      | 最大セル電圧                                 |            |
+| min_cell_vol_mv             | uint32          | mV        |                      | 最小セル電圧                                 |            |
+| max_cell_temp_c             | sint32          | °C        |                      | 最高セル温度                                 |            |
+| min_cell_temp_c             | sint32          | °C        |                      | 最低セル温度                                 |            |
+| max_mos_temp_c              | sint32          | °C        |                      | BMS MOS 最高温度                             |            |
+| min_mos_temp_c              | sint32          | °C        |                      | BMS MOS 最低温度                             |            |
+| unknown22                   | sint32          |           |                      |                                              |            |
+| unknown23                   | sint32          |           |                      |                                              |            |
+| bms_design_cap_mah          | uint32          | mAh       |                      | バッテリー設計容量                           |            |
+| bms_batt_soc_percent_float1 | float           | %         |                      | バッテリー SOC（float, unknown42/44 と類似） |            |
+| unknown26                   | sint32          |           |                      |                                              |            |
+| bms_chg_rem_time_min        | uint32          | min       |                      | 充電残時間                                   |            |
+| bms_dsg_rem_time_min        | uint32          | min       |                      | 放電残時間                                   |            |
+| unknown29                   | sint32          |           |                      |                                              |            |
+| unknown30                   | sint32          |           |                      |                                              |            |
+| max_mos_temp_c_dup          | sint32          | °C        |                      | BMS MOS 最高温度（maxMosTemp20 と重複）      |            |
+| cell_vol_array_size         | sint32          |           |                      | cellVol33 配列の要素数（通常 16）            |            |
+| cell_vol_mv                 | repeated uint32 | mV        |                      | 各セル電圧配列（16 セル）                    |            |
+| cell_temp_array_size        | sint32          |           |                      | cellTemp35 配列の要素数（通常 8）            |            |
+| cell_temp_c                 | repeated sint32 | °C        |                      | 各セル温度配列（8 個所）                     |            |
+| bms_firm_ver                | string          |           |                      | BMS ファームウェアバージョン                 |            |
+| bms_heart_ver               | uint32          |           |                      | BMS ハートビートバージョン?                  |            |
+| ecloud_ocv                  | uint32          |           |                      | OCV 関連? 65535 は無効値か                   |            |
+| bms_sn                      | string          |           |                      | BMS シリアル番号?                            |            |
+| unknown40                   | sint32          |           |                      |                                              |            |
+| unknown41                   | sint32          |           |                      |                                              |            |
+| bms_batt_soc_percent_float2 | float           | %         |                      | バッテリー SOC（float, unknown25/44 と類似） |            |
+| unknown43                   | float           |           |                      |                                              |            |
+| bms_batt_soc_percent_float3 | float           | %         |                      | バッテリー SOC（float, unknown25/42 と類似） |            |
+| unknown45                   | sint32          |           | -1:無効値/未設定?    |                                              |            |
+| unknown46                   | sint32          |           |                      |                                              |            |
+| bms_chg_dsg_state           | sint32          |           | 0:idle,1:放電,2:充電 | 充電/放電状態                                |            |
+| unknown48                   | sint32          |           |                      |                                              |            |
+| unknown49                   | sint32          |           |                      |                                              |            |
+| unknown50                   | uint64          |           |                      |                                              |            |
+| unknown51                   | uint64          |           |                      |                                              |            |
+| unknown52                   | float           |           |                      | SOH 関連値?                                  |            |
+| unknown53                   | float           |           |                      |                                              |            |
+| bms_batt_soh_percent_float  | float           | %         |                      | バッテリー SOH（float, soh54,最も正確?）     |            |
+| unknown55                   | sint32          |           |                      |                                              |            |
+| mos_temp_c                  | repeated sint32 | °C        |                      | MOS 温度（3 個所）                           |            |
+| unknown57                   | sint32          |           |                      |                                              |            |
+| unknown58                   | repeated sint32 |           |                      |                                              |            |
+| unknown61                   | sint32          |           |                      |                                              |            |
+| unknown62                   | repeated sint32 |           |                      |                                              |            |
+| unknown63                   | sint32          |           |                      |                                              |            |
+| unknown64                   | sint32          |           |                      |                                              |            |
+| unknown67                   | sint32          |           |                      |                                              |            |
+| unknown68                   | sint32          |           |                      |                                              |            |
+| unknown69                   | sint32          |           |                      |                                              |            |
+| bms_err_code_flags          | repeated uint32 |           |                      | BMS エラーコード配列（16 要素,0:エラーなし） |            |
+| unknown71                   | sint32          |           |                      |                                              |            |
+| bat_volt_mv_array           | repeated sint32 | mV        |                      | バッテリー電圧（配列,通常 1 要素）           |            |
+| unknown73                   | uint32          |           |                      |                                              |            |
+| unknown74                   | sint32          |           |                      |                                              |            |
+| unknown75                   | sint32          |           |                      |                                              |            |
+| unknown76                   | sint32          |           |                      |                                              |            |
+| unknown77                   | sint32          |           |                      |                                              |            |
+| unknown78                   | sint32          |           |                      |                                              |            |
+| unknown79                   | uint64          |           |                      |                                              |            |
+| unknown80                   | uint64          |           |                      |                                              |            |
+| pack_sn                     | string          |           |                      | バッテリーパックシリアル番号?                |            |
+| unknown82                   | sint32          |           |                      |                                              |            |
+
+#### cmdFunc32_cmdId2_Report（CMS/BMS サマリー, 全フィールド網羅, .proto 定義・実データ反映）
+
+| フィールド名             | 型     | 単位/範囲 | enum/状態値・選択肢 | 説明                                        | 備考 |
+| ------------------------ | ------ | --------- | ------------------- | ------------------------------------------- | ---- |
+| cms_flt_state            | sint32 |           | 0:OK                | CMS fault state                             |      |
+| cms_pro_state            | sint32 |           | 0:OK                | CMS protection state                        |      |
+| cms_alm_state            | sint32 |           | 0:OK                | CMS alarm state                             |      |
+| cms_ntc_state            | sint32 |           | 0:OK                | CMS NTC state                               |      |
+| cms_ntc_num              | sint32 |           |                     | CMS NTC number                              |      |
+| cms_ntc_temp             | sint32 | °C        |                     | CMS NTC temperature                         |      |
+| bms_flt_state            | sint32 |           | 0:OK                | BMS fault state                             |      |
+| bms_pro_state            | sint32 |           | 0:OK                | BMS protection state                        |      |
+| bms_alm_state            | sint32 |           | 0:OK                | BMS alarm state                             |      |
+| bms_ntc_state            | sint32 |           | 0:OK                | BMS NTC state                               |      |
+| bms_ntc_num              | sint32 |           |                     | BMS NTC number                              |      |
+| bms_ntc_temp             | sint32 | °C        |                     | BMS NTC temperature                         |      |
+| bms_cell_volt_max        | sint32 | mV        |                     | BMS cell voltage max                        |      |
+| bms_cell_volt_min        | sint32 | mV        |                     | BMS cell voltage min                        |      |
+| bms_cell_volt_diff       | sint32 | mV        |                     | BMS cell voltage diff                       |      |
+| bms_cell_volt_avg        | sint32 | mV        |                     | BMS cell voltage avg                        |      |
+| bms_temp_max             | sint32 | °C        |                     | BMS temperature max                         |      |
+| bms_temp_min             | sint32 | °C        |                     | BMS temperature min                         |      |
+| bms_temp_avg             | sint32 | °C        |                     | BMS temperature avg                         |      |
+| bms_soc                  | sint32 | %         | 0-100               | BMS state of charge                         |      |
+| bms_soh                  | sint32 | %         | 0-100               | BMS state of health                         |      |
+| bms_cycle                | sint32 |           |                     | BMS cycle count                             |      |
+| bms_cap                  | sint32 | mAh       |                     | BMS capacity                                |      |
+| bms_current              | sint32 | mA        |                     | BMS current                                 |      |
+| bms_volt                 | sint32 | mV        |                     | BMS voltage                                 |      |
+| bms_power                | sint32 | mW        |                     | BMS power                                   |      |
+| bms_res                  | sint32 | mΩ        |                     | BMS resistance                              |      |
+| bms_fet_state            | sint32 |           |                     | BMS FET state                               |      |
+| bms_fet_temp             | sint32 | °C        |                     | BMS FET temperature                         |      |
+| bms_fet_curr             | sint32 | mA        |                     | BMS FET current                             |      |
+| bms_fet_volt             | sint32 | mV        |                     | BMS FET voltage                             |      |
+| bms_fet_power            | sint32 | mW        |                     | BMS FET power                               |      |
+| bms_fet_res              | sint32 | mΩ        |                     | BMS FET resistance                          |      |
+| bms_fet_num              | sint32 |           |                     | BMS FET number                              |      |
+| bms_fet_type             | sint32 |           |                     | BMS FET type                                |      |
+| bms_fet_ver              | sint32 |           |                     | BMS FET version                             |      |
+| bms_fet_sn               | sint32 |           |                     | BMS FET serial number                       |      |
+| bms_fet_sw_ver           | sint32 |           |                     | BMS FET software version                    |      |
+| bms_fet_hw_ver           | sint32 |           |                     | BMS FET hardware version                    |      |
+| bms_fet_manu_date        | sint32 |           |                     | BMS FET manufacture date                    |      |
+| bms_fet_manu_name        | string |           |                     | BMS FET manufacturer name                   |      |
+| bms_fet_manu_sn          | string |           |                     | BMS FET manufacturer serial number          |      |
+| bms_fet_manu_sw_ver      | string |           |                     | BMS FET manufacturer software version       |      |
+| bms_fet_manu_hw_ver      | string |           |                     | BMS FET manufacturer hardware version       |      |
+| bms_fet_manu_date_str    | string |           |                     | BMS FET manufacturer date (string)          |      |
+| bms_fet_manu_name_str    | string |           |                     | BMS FET manufacturer name (string)          |      |
+| bms_fet_manu_sn_str      | string |           |                     | BMS FET manufacturer serial number (string) |      |
+| bms_fet_manu_sw_ver_str  | string |           |                     | BMS FET manufacturer software ver (string)  |      |
+| bms_fet_manu_hw_ver_str  | string |           |                     | BMS FET manufacturer hardware ver (string)  |      |
+| bms_fet_manu_date_str2   | string |           |                     | BMS FET manufacturer date (string2)         |      |
+| bms_fet_manu_name_str2   | string |           |                     | BMS FET manufacturer name (string2)         |      |
+| bms_fet_manu_sn_str2     | string |           |                     | BMS FET manufacturer serial number (str2)   |      |
+| bms_fet_manu_sw_ver_str2 | string |           |                     | BMS FET manufacturer software ver (str2)    |      |
+| bms_fet_manu_hw_ver_str2 | string |           |                     | BMS FET manufacturer hardware ver (str2)    |      |

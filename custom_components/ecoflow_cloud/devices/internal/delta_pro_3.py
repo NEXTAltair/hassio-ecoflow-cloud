@@ -1,5 +1,11 @@
+import logging
+from typing import Any
+
 from custom_components.ecoflow_cloud.api import EcoflowApiClient
 from custom_components.ecoflow_cloud.devices import BaseDevice, const
+from custom_components.ecoflow_cloud.devices.internal.proto import (
+    ef_dp3_iobroker_pb2 as pb2,
+)
 from custom_components.ecoflow_cloud.entities import (
     BaseNumberEntity,
     BaseSelectEntity,
@@ -394,3 +400,283 @@ class DeltaPro3(BaseDevice):
                 },
             ),
         ]
+
+    def _prepare_data(self, raw_data: bytes) -> dict[str, Any]:
+        """
+        Delta Pro 3専用のデータ準備メソッド
+        Protobufバイナリデータをデコードして辞書形式に変換
+        """
+        _LOGGER = logging.getLogger(__name__)
+        
+        try:
+            _LOGGER.debug(f"Processing {len(raw_data)} bytes of raw data")
+
+            # 1. HeaderMessageのデコード
+            header_info = self._decode_header_message(raw_data)
+            if not header_info:
+                _LOGGER.warning("HeaderMessage decoding failed")
+                return {}
+
+            # 2. ペイロードデータの抽出
+            pdata = self._extract_payload_data(header_info.get("header_obj"))
+            if not pdata:
+                _LOGGER.warning("No payload data found")
+                return {}
+
+            # 3. XORデコード (必要に応じて)
+            decoded_pdata = self._perform_xor_decode(pdata, header_info)
+
+            # 4. Protobufメッセージのデコード
+            decoded_data = self._decode_message_by_type(decoded_pdata, header_info)
+            if not decoded_data:
+                _LOGGER.warning("Message decoding failed")
+                return {}
+
+            # 5. HAフィールド形式への変換
+            transformed_data = self._transform_data_fields(decoded_data, header_info)
+
+            _LOGGER.debug(f"Successfully processed data: {len(transformed_data)} fields")
+            return transformed_data
+
+        except Exception as e:
+            _LOGGER.error(f"Data processing failed: {e}", exc_info=True)
+            return {}
+
+    def _decode_header_message(self, raw_data: bytes) -> dict[str, Any] | None:
+        """HeaderMessageをデコードしてヘッダー情報を抽出"""
+        _LOGGER = logging.getLogger(__name__)
+        
+        try:
+            # Base64デコードを試行
+            import base64
+
+            try:
+                decoded_payload = base64.b64decode(raw_data, validate=True)
+                _LOGGER.debug("Base64 decode successful")
+                raw_data = decoded_payload
+            except Exception:
+                _LOGGER.debug("Data is not Base64 encoded, using as-is")
+
+            # HeaderMessageとしてデコードを試行
+            header_msg = pb2.HeaderMessage()
+            header_msg.ParseFromString(raw_data)
+
+            if not header_msg.header:
+                _LOGGER.debug("No headers found in HeaderMessage")
+                return None
+
+            # 最初のヘッダーを使用 (通常は1つ)
+            header = header_msg.header[0]
+            header_info = {
+                "src": getattr(header, "src", 0),
+                "dest": getattr(header, "dest", 0),
+                "dSrc": getattr(header, "d_src", 0),
+                "dDest": getattr(header, "d_dest", 0),
+                "encType": getattr(header, "enc_type", 0),
+                "checkType": getattr(header, "check_type", 0),
+                "cmdFunc": getattr(header, "cmd_func", 0),
+                "cmdId": getattr(header, "cmd_id", 0),
+                "dataLen": getattr(header, "data_len", 0),
+                "needAck": getattr(header, "need_ack", 0),
+                "seq": getattr(header, "seq", 0),
+                "productId": getattr(header, "product_id", 0),
+                "version": getattr(header, "version", 0),
+                "payloadVer": getattr(header, "payload_ver", 0),
+                "header_obj": header,
+            }
+
+            _LOGGER.debug(f"Header decoded: cmdFunc={header_info['cmdFunc']}, cmdId={header_info['cmdId']}")
+            return header_info
+
+        except Exception as e:
+            _LOGGER.debug(f"HeaderMessage decode failed: {e}")
+            return None
+
+    def _extract_payload_data(self, header_obj: Any) -> bytes | None:
+        """ヘッダーからペイロードデータを抽出"""
+        _LOGGER = logging.getLogger(__name__)
+        
+        try:
+            pdata = getattr(header_obj, "pdata", b"")
+            if pdata:
+                _LOGGER.debug(f"Extracted {len(pdata)} bytes of payload data")
+                return pdata
+            else:
+                _LOGGER.warning("No pdata found in header")
+                return None
+        except Exception as e:
+            _LOGGER.error(f"Payload extraction error: {e}")
+            return None
+
+    def _perform_xor_decode(self, pdata: bytes, header_info: dict[str, Any]) -> bytes:
+        """必要に応じてXORデコードを実行"""
+        _LOGGER = logging.getLogger(__name__)
+        
+        enc_type = header_info.get("encType", 0)
+        src = header_info.get("src", 0)
+        seq = header_info.get("seq", 0)
+
+        # XOR decode condition: enc_type == 1 and src != 32
+        if enc_type == 1 and src != 32:
+            _LOGGER.debug(f"Performing XOR decode with seq={seq}")
+            return self._xor_decode_pdata(pdata, seq)
+        else:
+            _LOGGER.debug("No XOR decoding needed")
+            return pdata
+
+    def _xor_decode_pdata(self, pdata: bytes, seq: int) -> bytes:
+        """XORデコード処理"""
+        if not pdata:
+            return b""
+
+        decoded_payload = bytearray()
+        for byte_val in pdata:
+            decoded_payload.append((byte_val ^ seq) & 0xFF)
+
+        return bytes(decoded_payload)
+
+    def _decode_message_by_type(self, pdata: bytes, header_info: dict[str, Any]) -> dict[str, Any]:
+        """cmdFunc/cmdIdに基づいてProtobufメッセージをデコード"""
+        _LOGGER = logging.getLogger(__name__)
+        
+        cmd_func = header_info.get("cmdFunc", 0)
+        cmd_id = header_info.get("cmdId", 0)
+
+        try:
+            _LOGGER.debug(f"Decoding message: cmdFunc={cmd_func}, cmdId={cmd_id}")
+
+            if cmd_func == 254 and cmd_id == 21:
+                # DisplayPropertyUpload
+                msg = pb2.DisplayPropertyUpload()
+                msg.ParseFromString(pdata)
+                return self._protobuf_to_dict(msg)
+
+            elif cmd_func == 32 and cmd_id == 2:
+                # cmdFunc32_cmdId2_Report
+                msg = pb2.cmdFunc32_cmdId2_Report()
+                msg.ParseFromString(pdata)
+                return self._protobuf_to_dict(msg)
+
+            elif cmd_func == 32 and cmd_id == 50:
+                # RuntimePropertyUpload
+                msg = pb2.RuntimePropertyUpload()
+                msg.ParseFromString(pdata)
+                return self._protobuf_to_dict(msg)
+
+            else:
+                _LOGGER.warning(f"Unknown message type: cmdFunc={cmd_func}, cmdId={cmd_id}")
+                return {}
+
+        except Exception as e:
+            _LOGGER.error(f"Message decode error for cmdFunc={cmd_func}, cmdId={cmd_id}: {e}")
+            return {}
+
+    def _protobuf_to_dict(self, protobuf_obj: Any) -> dict[str, Any]:
+        """Protobufオブジェクトを辞書に変換"""
+        _LOGGER = logging.getLogger(__name__)
+        
+        try:
+            from google.protobuf.json_format import MessageToDict
+            result = MessageToDict(protobuf_obj, preserving_proto_field_name=True)
+            _LOGGER.debug(f"MessageToDict result: {len(result)} fields")
+            return result
+        except ImportError:
+            # フォールバック: 手動変換
+            result = self._manual_protobuf_to_dict(protobuf_obj)
+            _LOGGER.debug(f"Manual conversion result: {len(result)} fields")
+            return result
+
+    def _manual_protobuf_to_dict(self, protobuf_obj: Any) -> dict[str, Any]:
+        """手動でProtobufオブジェクトを辞書に変換"""
+        result = {}
+        for field, value in protobuf_obj.ListFields():
+            if field.label == field.LABEL_REPEATED:
+                result[field.name] = list(value)
+            elif hasattr(value, "ListFields"):  # ネストしたメッセージ
+                result[field.name] = self._manual_protobuf_to_dict(value)
+            else:
+                result[field.name] = value
+        return result
+
+    def _transform_data_fields(self, decoded_data: dict[str, Any], header_info: dict[str, Any]) -> dict[str, Any]:
+        """Home Assistant用のフィールド変換"""
+        _LOGGER = logging.getLogger(__name__)
+        
+        cmd_func = header_info.get("cmdFunc", 0)
+        cmd_id = header_info.get("cmdId", 0)
+        
+        _LOGGER.debug(f"Transform data for cmdFunc={cmd_func}, cmdId={cmd_id}")
+
+        if cmd_func == 254 and cmd_id == 21:
+            return self._transform_display_property(decoded_data)
+        elif cmd_func == 32 and cmd_id == 2:
+            return self._transform_cms_bms_summary(decoded_data)
+        elif cmd_func == 32 and cmd_id == 50:
+            return self._transform_runtime_property(decoded_data)
+        else:
+            _LOGGER.debug("No specific transform, returning raw data")
+            return decoded_data
+
+    def _transform_display_property(self, data: dict[str, Any]) -> dict[str, Any]:
+        """DisplayPropertyUpload のフィールド変換"""
+        result = {}
+
+        # 基本電力情報 (フィールド名はすでにsnake_case)
+        if "pow_out_sum_w" in data:
+            result["pow_out_sum_w"] = data["pow_out_sum_w"]
+        if "pow_get_ac_hv_out" in data:
+            result["pow_get_ac_hv_out"] = data["pow_get_ac_hv_out"]
+        if "pow_get_bms" in data:
+            result["pow_get_bms"] = data["pow_get_bms"]
+
+        # 充電時間情報
+        if "bms_chg_rem_time" in data:
+            result["bms_chg_rem_time"] = data["bms_chg_rem_time"]
+        if "cms_chg_rem_time" in data:
+            result["cms_chg_rem_time"] = data["cms_chg_rem_time"]
+            
+        # その他のフィールド
+        if "bms_min_mos_temp" in data:
+            result["bms_min_mos_temp"] = data["bms_min_mos_temp"]
+
+        return result
+
+    def _transform_cms_bms_summary(self, data: dict[str, Any]) -> dict[str, Any]:
+        """cmdFunc32_cmdId2_Report のフィールド変換"""
+        result = {}
+
+        # msg32_2_1 からの主要データ抽出
+        if "msg32_2_1" in data:
+            msg1 = data["msg32_2_1"]
+            if "volt4" in msg1:
+                result["cms_batt_vol"] = msg1["volt4"]
+            if "soc15" in msg1:
+                result["cms_batt_soc"] = msg1["soc15"]
+
+        return result
+
+    def _transform_runtime_property(self, data: dict[str, Any]) -> dict[str, Any]:
+        """RuntimePropertyUpload のフィールド変換 (cmdFunc=32, cmdId=50)"""
+        result = {}
+
+        # RuntimePropertyUpload のフィールドを直接マップ
+        if "ac_phase_type" in data:
+            result["ac_phase_type"] = data["ac_phase_type"]
+        if "pcs_work_mode" in data:
+            result["pcs_work_mode"] = data["pcs_work_mode"]
+        if "plug_in_info_pv_l_vol" in data:
+            result["plug_in_info_pv_l_vol"] = data["plug_in_info_pv_l_vol"]
+        if "temp_pcs_dc" in data:
+            result["temp_pcs_dc"] = data["temp_pcs_dc"]
+        if "temp_pcs_ac" in data:
+            result["temp_pcs_ac"] = data["temp_pcs_ac"]
+        if "bms_batt_vol" in data:
+            result["bms_batt_vol"] = data["bms_batt_vol"]
+        if "bms_batt_amp" in data:
+            result["bms_batt_amp"] = data["bms_batt_amp"]
+        if "bms_remain_cap" in data:
+            result["bms_remain_cap"] = data["bms_remain_cap"]
+        if "bms_full_cap" in data:
+            result["bms_full_cap"] = data["bms_full_cap"]
+
+        return result

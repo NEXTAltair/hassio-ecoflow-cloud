@@ -49,16 +49,16 @@ EcoFlow Delta Pro 3 から MQTT メッセージを `scripts/mqtt_capture_dp3_deb
 python scripts/mqtt_capture_dp3_debug.py
 2025-05-27 16:21:47,865 - INFO - [__main__] - config.jsonの直接指定されたMQTT認証情報を使用します。
 ... (接続成功、トピック購読成功) ...
-2025-05-27 16:21:48,447 - INFO - [__main__] - データ取得要求メッセージをトピック 'app/1807962518217633793/MR51ZJS4PG6C0181/thing/property/set' に送信します。
+2025-05-27 16:21:48,447 - INFO - [__main__] - データ取得要求メッセージをトピック 'app/USER_ID/DEVICE_SN/thing/property/set' に送信します。
 2025-05-27 16:21:48,447 - DEBUG - [__main__] - 送信メッセージ (protobuf): header {
   src: 32
   dest: 32
   seq: 311218975
   from: "ios"
 }
-2025-05-27 16:21:48,448 - DEBUG - [paho.mqtt.client] - Sending PUBLISH (d0, q1, r0, m2), 'b'app/1807962518217633793/MR51ZJS4PG6C0181/thing/property/set'', ... (24 bytes)
+2025-05-27 16:21:48,448 - DEBUG - [paho.mqtt.client] - Sending PUBLISH (d0, q1, r0, m2), 'b'app/USER_ID/DEVICE_SN/thing/property/set'', ... (24 bytes)
 2025-05-27 16:21:48,720 - DEBUG - [paho.mqtt.client] - Received PUBACK (Mid: 2)
-2025-05-27 16:21:50,381 - DEBUG - [paho.mqtt.client] - Received PUBLISH (d0, q0, r0, m0), '/app/device/property/MR51ZJS4PG6C0181', ...  (53 bytes)
+2025-05-27 16:21:50,381 - DEBUG - [paho.mqtt.client] - Received PUBLISH (d0, q0, r0, m0), '/app/device/property/DEVICE_SN', ...  (53 bytes)
 ... (同様のメッセージ受信と未処理のログが続く) ...
 ```
 
