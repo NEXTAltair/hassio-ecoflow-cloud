@@ -393,37 +393,37 @@ message ResvInfo {
 
 //ems
 message struct32_2_1 {
-    optional sint32 unknown1_s1 = 1; // Changed from unknown1 to avoid conflict
-    optional sint32 unknown2_s1 = 2; // Changed from unknown2 to avoid conflict
-    optional sint32 unknown3_s1 = 3; // Changed from unknown3 to avoid conflict
+    optional sint32 cms_status_misc1 = 1; // Misc status, meaning TBD
+    optional sint32 cms_status_misc2 = 2; // Misc status, meaning TBD
+    optional sint32 cms_status_misc3 = 3; // Misc status, meaning TBD
     optional sint32 cms_batt_vol_mv = 4; // mV, CMS battery voltage (e.g., 53350 for 53.350V)
     optional uint32 cms_chg_req_amp = 5; // mA?, CMS charge request current (130000 might be 130.000A or another param)
-    optional sint32 unknown6_s1 = 6; // Changed from unknown6 to avoid conflict
-    optional uint32 cms_max_chg_soc_percent = 7; // %, Charge limit SOC
-    optional uint32 cms_min_dsg_soc_percent = 8; // %, Discharge limit SOC
-    optional uint32 ac_out_freq_hz_config = 9; // Hz, AC output frequency (may correspond to cfgAcOutFreq or acOutFreq)
-    optional sint32 unknown10_s1 = 10; // Changed from unknown10 to avoid conflict
-    optional sint32 unknown11_s1 = 11; // Changed from unknown11 to avoid conflict
-    optional uint32 cms_chg_rem_time_min = 12; // min, CMS remaining charging time
-    optional uint32 cms_dsg_rem_time_min = 13; // min, CMS remaining discharging time
+    optional sint32 cms_status_misc4 = 6; // Misc status, meaning TBD
+    optional uint32 cms_max_chg_soc = 7; // %, Charge limit SOC
+    optional uint32 cms_min_dsg_soc = 8; // %, Discharge limit SOC
+    optional uint32 ac_out_freq = 9; // Hz, AC output frequency (may correspond to cfgAcOutFreq or acOutFreq)
+    optional sint32 cms_status_misc5 = 10; // Misc status, meaning TBD
+    optional sint32 cms_status_misc6 = 11; // Misc status, meaning TBD
+    optional uint32 cms_chg_rem_time = 12; // min, CMS remaining charging time
+    optional uint32 cms_dsg_rem_time = 13; // min, CMS remaining discharging time
     optional sint32 cms_chg_dsg_state = 14; // CMS charging/discharging state (0: idle, 1: discharging, 2: charging)
-    optional float cms_batt_soc_percent = 15; // %, Overall SOC
+    optional float cms_batt_soc = 15; // %, Overall SOC
     repeated sint32 bms_is_conn_state = 16; // BMS connection state (for multiple packs? e.g., [3,0,3])
-    optional sint32 unknown17_s1 = 17; // Changed from unknown17 to avoid conflict
-    optional sint32 unknown18_s1 = 18; // Changed from unknown18 to avoid conflict
-    optional sint32 unknown19_s1 = 19; // Changed from unknown19 to avoid conflict
-    optional sint32 unknown20_s1 = 20; // Changed from unknown20 to avoid conflict
-    optional sint32 unknown21_s1 = 21; // Changed from unknown21 to avoid conflict
-    optional sint32 unknown22_s1 = 22; // Changed from unknown22 to avoid conflict
-    optional uint32 cms_oil_off_soc_percent = 23; // %, SOC for automatically stopping Smart Generator (or cmsOilOnSoc)
+    optional sint32 cms_status_misc7 = 17; // Misc status, meaning TBD
+    optional sint32 cms_status_misc8 = 18; // Misc status, meaning TBD
+    optional sint32 cms_status_misc9 = 19; // Misc status, meaning TBD
+    optional sint32 cms_status_misc10 = 20; // Misc status, meaning TBD
+    optional sint32 cms_status_misc11 = 21; // Misc status, meaning TBD
+    optional sint32 cms_status_misc12 = 22; // Misc status, meaning TBD
+    optional uint32 cms_oil_off_soc = 23; // %, SOC for automatically stopping Smart Generator (or cmsOilOnSoc)
 }
 
 message struct32_2_2 {
-    optional sint32 unknown1_s2 = 1; // Changed from unknown1 to avoid conflict
-    optional sint32 unknown2_s2 = 2; // Changed from unknown2 to avoid conflict
-    optional sint32 unknown3_s2 = 3; // Changed from unknown3 to avoid conflict
-    optional sint32 unknown4_s2 = 4; // Changed from unknown4 to avoid conflict
-    optional sint32 unknown5_s2 = 5; // Changed from unknown5 to avoid conflict
+    optional sint32 cms_status_misc13 = 1; // Misc status, meaning TBD
+    optional sint32 cms_status_misc14 = 2; // Misc status, meaning TBD
+    optional sint32 cms_status_misc15 = 3; // Misc status, meaning TBD
+    optional sint32 cms_status_misc16 = 4; // Misc status, meaning TBD
+    optional sint32 cms_status_misc17 = 5; // Misc status, meaning TBD
 }
 
 message cmdFunc32_cmdId2_Report {

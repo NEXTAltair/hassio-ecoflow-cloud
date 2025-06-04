@@ -152,12 +152,12 @@ Protobuf で定義されている実際のフィールド名を使用:
   - ✅ 統計情報表示
   - ✅ Ctrl+C 終了対応
 
-- [ ] 7.2. **実データでの動作確認**
+- [x] 7.2. **実データでの動作確認**
 
   ```bash
   # 実行手順
   cd scripts/delta_pro3_real_data_test
-  python [`main.py`](../../scripts/delta_pro3_real_data_test/main.py)
+  python main.py
   ```
 
   **確認項目:**
@@ -166,34 +166,71 @@ Protobuf で定義されている実際のフィールド名を使用:
   - メッセージ受信・デコード
   - フィールド抽出確認
   - データ品質検証
+  - 主要なバッテリー・電力・状態情報が全ての該当メッセージで正しく抽出されていることを確認
+  - unknown 系フィールドも含め、値の変動や安定性が時系列で観察できることを確認
 
-- [ ] 7.3. **統合テストの実行**
+- [x] 7.3. **統合テストの実行**
   - 複数メッセージタイプでの動作確認
   - 成功率の測定・分析
   - 問題点の特定・修正
   - [実データテストログ (real_data_test.log)](../../scripts/delta_pro3_real_data_test/test_results/real_data_test.log)
   - [生メッセージ (raw_messages.jsonl)](../../scripts/delta_pro3_real_data_test/test_results/raw_messages.jsonl)
   - [処理済みデータ (processed_data.jsonl)](../../scripts/delta_pro3_real_data_test/test_results/processed_data.jsonl)
-  - **現象概要:** 一部メッセージ（例: cmdFunc=32, cmdId=2 や cmdFunc=254, cmdId=21 など）で MessageToDict でフィールドは得られているのに、最終出力が 0 件またはごく一部しか抽出されない現象が継続。主要なバッテリー情報や電力情報が安定して抽出できない場合が多い。詳細な原因分析・解決は新規タスク [ISSUE_06_delta_pro3_prepare_data_decode_failure.md](ISSUE_06_delta_pro3_prepare_data_decode_failure.md) で行う。
+  - **現象概要:**
+    - 【2025-06-02 時点】ISSUE_06 での抜本的なロジック修正により、全ての主要メッセージ型でフィールド抽出・データ品質が大幅に改善し、空データ・欠損・unknown 系の取りこぼしも解消。
+    - 詳細な定量・定性的な検証結果・サンプル出力例は [ISSUE_06_delta_pro3_prepare_data_decode_failure.md](../ISSUE_06_delta_pro3_prepare_data_decode_failure.md) の「6. 成功率・抽出フィールド数の改善を確認」セクションを参照。
 
 ### **Phase 3: HA への統合**
 
-- [ ] 8. **Delta Pro 3 クラスでの \_prepare_data メソッド実装**
+- [x] 8. **Delta Pro 3 クラスでの \_prepare_data メソッド実装**
 
   - ローカルスクリプトから本体への移植
   - インポートパスの調整
   - ログ設定の調整
 
-- [ ] 9. **HA 環境でのテスト**
+  **関連ファイル:**
 
-  - 実際の MQTT データでの動作確認
-  - sensors メソッド実行確認
-  - エンティティ値表示確認
+  - ローカル実装・検証用: [`scripts/delta_pro3_real_data_test/prepare_data_processor.py`](../../scripts/delta_pro3_real_data_test/prepare_data_processor.py)
+  - 本体実装・編集先: [`custom_components/ecoflow_cloud/devices/internal/delta_pro_3.py`](../../custom_components/ecoflow_cloud/devices/internal/delta_pro_3.py)
 
-- [ ] 10. **最終検証**
-  - Home Assistant UI でのセンサー値確認
-  - `home-assistant.log` でのエラー解消確認 (パスが特定できないためリンクなし)
-  - 継続的な動作の確認
+  **統合結果:**
+
+  - prepare_data_processor.py の flat 化・全フィールド抽出・unknown 系抽出ロジックを DeltaPro3 クラスに移植し、\_prepare_data メソッドを大幅刷新。
+  - 返り値は Home Assistant 用 dict（ha_fields）・全フィールド（all_fields, flat）・unknown 系（unknown_fields, flat）を返す構造に統一。
+  - 主要なバッテリー・電力・状態情報（cms_batt_vol_mv, bms_batt_vol, ac_out_freq_hz_config 等）も正しく抽出・マッピング。
+  - フィールド名は ioBroker 実装に合わせて snake_case・flat 構造に統一。
+  - 既存の他デバイス（delta*pro, delta_max, river_pro 等）との比較で、flat 化・フィールド名の違いが明確化。delta_pro_3 は bms*_/cms**/pow**等の flat 名、他は bmsMaster._/mppt.*/pd.*等のネスト名が多い。
+  - 今後、他デバイスも flat 化・命名統一を進めることで、共通ロジック化・保守性向上が期待できる。
+
+- [x] 9. **HA 環境でのテスト**
+
+  - 実際の MQTT データでの動作確認を実施。
+  - sensors メソッド経由で各エンティティが生成され、値が取得されることを確認。
+  - ただし、現状は一部エンティティで「不明」や「0V」等の異常値が表示されるケースあり。
+  - 原因は、flat 化後のフィールド名とエンティティ定義側の参照名のズレ、または変換ロジックの不一致が主。
+  - データ取得自体は成功しているが、値のマッピング・変換ルールの精査・統一が今後の課題。
+  - ログ・DEBUG 出力を活用し、どの時点で値が消失・変換ミスしているかを追跡中。
+  - 他デバイスとのフィールド名対応表を作成し、ズレの吸収・共通化を進める予定。
+  - ➡️ 詳細・今後の TODO は [issue_07_delta_pro_3_entity_mapping_and_flattening.md](issue_07_delta_pro_3_entity_mapping_and_flattening.md) を参照。
+
+- [ ] 10. **最終検証に進むための追加タスク**
+
+  - flat 化・命名統一のための変換ルールを整理し、変換ロジックを精査・修正
+  - 変換後の dict（ha_fields, all_fields, unknown_fields）の内容を DEBUG ログで詳細出力し、どの時点で値が消失・変換ミスしているかを特定
+  - エンティティ定義側の参照名と\_prepare_data 出力 dict のキー名のズレを解消
+
+#### 【DeltaPro3.\_prepare_data にコマンド送信用 JSON が渡る問題の原因と修正内容】
+
+- **原因:**
+
+  - DeltaPro3.\_prepare_data は本来バイナリ Protobuf データ専用だが、update_data メソッドで get_topic/set_topic 等のコマンド送信系トピックでも同じメソッドが呼ばれ、JSON 文字列がバイナリデコーダに渡っていた。
+  - そのため、DeltaPro3.\_prepare_data にコマンド送信用 JSON が渡ると空辞書{}しか返せず、値が消失する現象が発生していた。
+
+- **修正内容:**
+  - update_data 内で「data_topic（実データ受信）」の場合のみ DeltaPro3.\_prepare_data を呼び、それ以外（get/set 系）は BaseDevice のデフォルト（JSON デコード）を使うように分岐を明確化。
+  - DeltaPro3.\_prepare_data 内にも「JSON 文字列が来た場合は即 return」する防御ロジックを追加し、誤ったデータ流入時の影響を最小化。
+  - これにより、DeltaPro3.\_prepare_data には必ず「バイナリ Protobuf データ」のみが渡るようになり、flat 化・命名統一後の dict 内容が安定して Home Assistant 側に流れるようになる。
+  - 併せて、DEBUG ログで「どのトピックでどんなデータが来ているか」「変換後の dict 内容」を詳細出力し、今後のズレ検証・命名統一のトラブルシュートを容易にする。
 
 ## 技術的考慮事項
 

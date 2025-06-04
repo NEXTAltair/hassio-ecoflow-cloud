@@ -563,3 +563,118 @@ Issue 02「受信メッセージの解析・デコード」の完了により、
 | bms_fet_manu_sn_str2     | string |           |                     | BMS FET manufacturer serial number (str2)   |      |
 | bms_fet_manu_sw_ver_str2 | string |           |                     | BMS FET manufacturer software ver (str2)    |      |
 | bms_fet_manu_hw_ver_str2 | string |           |                     | BMS FET manufacturer hardware ver (str2)    |      |
+
+## [2025-06-01] 最新サンプル・分析に基づくフィールド一覧・マッピング表アップデート
+
+### 主要 cmdFunc/cmdId ごとの全フィールド一覧（message_to_dict_samples.jsonl 等より）
+
+#### cmdFunc32_cmdId2_Report（CMS/BMS サマリー, flat 化出力例）
+
+| フィールド名            | サンプル値 | 備考・推定用途・ioBroker 対応 |
+| ----------------------- | ---------- | ----------------------------- |
+| msg32_2_1.unknown1      | ...        |                               |
+| msg32_2_1.unknown2      | ...        |                               |
+| msg32_2_1.unknown3      | ...        |                               |
+| msg32_2_1.volt4         | ...        | cmsBattVol?                   |
+| msg32_2_1.unknown5      | ...        | cmsChgReqAmp?                 |
+| msg32_2_1.maxChargeSoc7 | ...        | cmsMaxChgSoc                  |
+| msg32_2_1.unknown8      | ...        | cmsMinDsgSoc                  |
+| msg32_2_1.unknown9      | ...        | acOutFreq                     |
+| msg32_2_1.unknown12     | ...        | cmsChgRemTime                 |
+| msg32_2_1.unknown13     | ...        | cmsDsgRemTime                 |
+| msg32_2_1.unknown14     | ...        | cmsChgDsgState                |
+| msg32_2_1.soc15         | ...        | cmsBattSoc                    |
+| msg32_2_1.bmsIsConnt16  | ...        | BMS 接続状態                  |
+| ...                     | ...        | ...                           |
+| msg32_2_2.unknown1      | ...        |                               |
+| msg32_2_2.unknown2      | ...        |                               |
+| ...                     | ...        | ...                           |
+
+#### cmdFunc50_cmdId30_Report（BMS 詳細ランタイム, flat 化出力例）
+
+| フィールド名  | サンプル値 | 備考・推定用途・ioBroker 対応 |
+| ------------- | ---------- | ----------------------------- |
+| bms_flt_state | ...        |                               |
+| bms_pro_state | ...        |                               |
+| bms_alm_state | ...        |                               |
+| ...           | ...        | ...                           |
+| cell_vol_mv   | [...]      | 各セル電圧配列                |
+| cell_temp_c   | [...]      | 各セル温度配列                |
+| ...           | ...        | ...                           |
+
+#### cmdFunc254_cmdId21/22（Display/RuntimePropertyUpload, flat 化出力例）
+
+| フィールド名 | サンプル値 | 備考・推定用途・ioBroker 対応 |
+| ------------ | ---------- | ----------------------------- |
+| acPhaseType  | ...        |                               |
+| pcsWorkMode  | ...        |                               |
+| ...          | ...        | ...                           |
+
+#### setReplyDp3（設定コマンド応答, flat 化出力例）
+
+| フィールド名 | サンプル値 | 備考・推定用途・ioBroker 対応 |
+| ------------ | ---------- | ----------------------------- |
+| actionId     | ...        |                               |
+| configOk     | ...        |                               |
+| ...          | ...        | ...                           |
+
+---
+
+- 各表の「サンプル値」欄は message_to_dict_samples.jsonl からの最新値で随時補完。
+- unknown 系フィールドも全て列挙し、今後の意味付け・マッピング精度向上のための観察対象とする。
+- 既存の詳細表（上部の大表）も引き続き参照・更新。
+
+## DeltaPro3 エンティティ・proto フィールド名 対応表（2024-06-時点）
+
+| エンティティ側フィールド名 | proto フィールド名     | 型     | 単位/意味・コメント例             | 備考 |
+| -------------------------- | ---------------------- | ------ | --------------------------------- | ---- |
+| bms_batt_soc               | bms_batt_soc           | float  | % メインバッテリー SOC            |      |
+| bms_batt_soh               | bms_batt_soh           | float  | % メインバッテリー SOH            |      |
+| cms_batt_soc               | cms_batt_soc           | float  | % CMS バッテリー SOC              |      |
+| bms_design_cap             | bms_design_cap         | uint32 | mAh バッテリー設計容量            |      |
+| bms_full_cap_mah           | bms_full_cap_mah       | uint32 | mAh バッテリー満充電容量          |      |
+| bms_remain_cap_mah         | bms_remain_cap_mah     | uint32 | mAh バッテリー残容量              |      |
+| bms_cycles                 | bms_cycles             | uint32 | サイクル数                        |      |
+| bms_batt_vol               | bms_batt_vol           | float  | V バッテリー電圧                  |      |
+| bms_min_cell_vol           | bms_min_cell_vol       | float  | V 最小セル電圧                    |      |
+| bms_max_cell_vol           | bms_max_cell_vol       | float  | V 最大セル電圧                    |      |
+| bms_batt_amp               | bms_batt_amp           | float  | A バッテリー電流                  |      |
+| bms_max_cell_temp          | bms_max_cell_temp      | float  | ℃ 最大セル温度                    |      |
+| bms_min_cell_temp          | bms_min_cell_temp      | float  | ℃ 最小セル温度                    |      |
+| bms_max_mos_temp           | bms_max_mos_temp       | float  | ℃ MOS 最大温度                    |      |
+| bms_chg_rem_time           | bms_chg_rem_time       | uint32 | min 充電残り時間                  |      |
+| bms_dsg_rem_time           | bms_dsg_rem_time       | uint32 | min 放電残り時間                  |      |
+| pow_out_sum_w              | pow_out_sum_w          | float  | W 総出力電力                      |      |
+| pow_in_sum_w               | pow_in_sum_w           | float  | W 総入力電力                      |      |
+| pow_get_ac_in              | pow_get_ac_in          | float  | W AC 入力電力                     |      |
+| pow_get_ac                 | pow_get_ac             | float  | W AC 出力電力                     |      |
+| pow_get_ac_hv_out          | pow_get_ac_hv_out      | float  | W AC 高圧出力電力                 |      |
+| pow_get_ac_lv_out          | pow_get_ac_lv_out      | float  | W AC 低圧出力電力                 |      |
+| plug_in_info_ac_in_vol     | plug_in_info_ac_in_vol | float  | V AC 入力電圧                     |      |
+| plug_in_info_ac_in_amp     | plug_in_info_ac_in_amp | float  | A AC 入力電流                     |      |
+| pow_get_12v                | pow_get_12v            | float  | W 12V DC 出力電力                 |      |
+| pow_get_24v                | pow_get_24v            | float  | W 24V DC 出力電力                 |      |
+| pow_get_12v_vol            | pow_get_12v_vol        | float  | V 12V DC 出力電圧                 |      |
+| pow_get_24v_vol            | pow_get_24v_vol        | float  | V 24V DC 出力電圧                 |      |
+| pow_get_pv_h               | pow_get_pv_h           | float  | W ソーラー高電圧入力電力          |      |
+| pow_get_pv_l               | pow_get_pv_l           | float  | W ソーラー低電圧入力電力          |      |
+| pow_get_pv_h_vol           | pow_get_pv_h_vol       | float  | V ソーラー高電圧入力電圧          |      |
+| pow_get_pv_l_vol           | pow_get_pv_l_vol       | float  | V ソーラー低電圧入力電圧          |      |
+| pow_get_pv_h_amp           | pow_get_pv_h_amp       | float  | A ソーラー高電圧入力電流          |      |
+| pow_get_pv_l_amp           | pow_get_pv_l_amp       | float  | A ソーラー低電圧入力電流          |      |
+| pow_get_qcusb1             | pow_get_qcusb1         | float  | W QC USB1 出力電力                |      |
+| pow_get_qcusb2             | pow_get_qcusb2         | float  | W QC USB2 出力電力                |      |
+| pow_get_typec1             | pow_get_typec1         | float  | W TypeC1 出力電力                 |      |
+| pow_get_typec2             | pow_get_typec2         | float  | W TypeC2 出力電力                 |      |
+| pow_get_5p8                | pow_get_5p8            | float  | W 5P8 ポート出力電力              |      |
+| pow_get_4p8_1              | pow_get_4p8_1          | float  | W 4P8 バッテリーポート 1 出力電力 |      |
+| pow_get_4p8_2              | pow_get_4p8_2          | float  | W 4P8 バッテリーポート 2 出力電力 |      |
+| ac_out_freq                | ac_out_freq            | float  | Hz AC 出力周波数                  |      |
+| cms_max_chg_soc            | cms_max_chg_soc        | float  | % 最大充電 SOC 設定               |      |
+| cms_min_dsg_soc            | cms_min_dsg_soc        | float  | % 最小放電 SOC 設定               |      |
+| pow_in_sum_energy          | pow_in_sum_energy      | float  | Wh 総入力エネルギー               |      |
+| pow_out_sum_energy         | pow_out_sum_energy     | float  | Wh 総出力エネルギー               |      |
+| ac_in_energy_total         | ac_in_energy_total     | float  | Wh AC 入力エネルギー              |      |
+| ac_out_energy_total        | ac_out_energy_total    | float  | Wh AC 出力エネルギー              |      |
+| pv_in_energy_total         | pv_in_energy_total     | float  | Wh ソーラー入力エネルギー         |      |
+| dc_out_energy_total        | dc_out_energy_total    | float  | Wh DC 出力エネルギー              |      |

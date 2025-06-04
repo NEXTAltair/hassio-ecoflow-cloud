@@ -51,6 +51,10 @@ class DeltaPro3RealDataTester:
 
         self.raw_messages_file = self.results_dir / "raw_messages.jsonl"
         self.processed_data_file = self.results_dir / "processed_data.jsonl"
+        # 追加: サンプル保存ファイル
+        self.message_to_dict_file = self.results_dir / "message_to_dict_samples.jsonl"
+        self.unknown_fields_file = self.results_dir / "unknown_fields_samples.jsonl"
+        self.raw_payload_file = self.results_dir / "raw_payload_samples.jsonl"
 
     def handle_mqtt_message(self, msg: mqtt.MQTTMessage) -> None:
         """MQTTメッセージを受信・処理"""
@@ -73,23 +77,59 @@ class DeltaPro3RealDataTester:
 
         # データ処理実行
         try:
-            processed_data = self.data_processor.prepare_data(msg.payload)
+            processed = self.data_processor.prepare_data(msg.payload)
 
-            if processed_data:
+            if processed:
                 self.success_count += 1
-                logger.info(f"✅ Processing success: {len(processed_data)} fields")
+                logger.info(
+                    f"✅ Processing success: {len(processed.get('ha_fields', {}))} fields"
+                )
 
                 # 処理済みデータを保存
                 result_data = {
                     "message_id": self.message_count,
                     "timestamp": time.time(),
                     "topic": msg.topic,
-                    "processed_fields": processed_data,
-                    "field_count": len(processed_data),
+                    "processed_fields": processed.get("ha_fields", {}),
+                    "field_count": len(processed.get("ha_fields", {})),
                 }
 
                 self._save_processed_data(result_data)
-                self._print_processed_data(processed_data)
+                self._print_processed_data(processed.get("ha_fields", {}))
+
+                # --- 追加: サンプル保存 ---
+                # 1. MessageToDict全フィールド
+                msg_to_dict_sample = {
+                    "message_id": self.message_count,
+                    "timestamp": time.time(),
+                    "topic": msg.topic,
+                    "all_fields": processed.get("all_fields", {}),
+                }
+                with open(self.message_to_dict_file, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(msg_to_dict_sample, ensure_ascii=False) + "\n")
+
+                # 2. unknown系フィールドのみ
+                unknown_fields_sample = {
+                    "message_id": self.message_count,
+                    "timestamp": time.time(),
+                    "topic": msg.topic,
+                    "unknown_fields": processed.get("unknown_fields", {}),
+                }
+                with open(self.unknown_fields_file, "a", encoding="utf-8") as f:
+                    f.write(
+                        json.dumps(unknown_fields_sample, ensure_ascii=False) + "\n"
+                    )
+
+                # 3. raw/payload/ヘッダー情報
+                raw_payload_sample = {
+                    "message_id": self.message_count,
+                    "timestamp": time.time(),
+                    "topic": msg.topic,
+                    "raw_payload_hex": msg.payload.hex(),
+                }
+                with open(self.raw_payload_file, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(raw_payload_sample, ensure_ascii=False) + "\n")
+                # --- 追加ここまで ---
 
             else:
                 logger.warning("❌ Processing failed: no data returned")

@@ -27,12 +27,8 @@ class DeltaPro3PrepareDataProcessor:
     def prepare_data(self, raw_data: bytes) -> dict[str, Any]:
         """
         Delta Pro 3用のメインデータ準備メソッド
-
-        Args:
-            raw_data: MQTTから受信した生バイナリデータ
-
         Returns:
-            dict: Home Assistant用に変換されたデータ
+            dict: {"all_fields": MessageToDict全フィールド, "unknown_fields": unknown系のみ, "ha_fields": Home Assistant用変換済み}
         """
         try:
             self.logger.debug(f"Processing {len(raw_data)} bytes of raw data")
@@ -61,10 +57,17 @@ class DeltaPro3PrepareDataProcessor:
             # 5. HAフィールド形式への変換
             transformed_data = self._transform_data_fields(decoded_data, header_info)
 
+            # 6. unknown系フィールド抽出
+            unknown_fields = self._extract_unknown_fields(decoded_data)
+
             self.logger.info(
                 f"Successfully processed data: {len(transformed_data)} fields"
             )
-            return transformed_data
+            return {
+                "all_fields": decoded_data,
+                "unknown_fields": unknown_fields,
+                "ha_fields": transformed_data,
+            }
 
         except Exception as e:
             self.logger.error(f"Data processing failed: {e}", exc_info=True)
@@ -344,72 +347,108 @@ class DeltaPro3PrepareDataProcessor:
             return decoded_data
 
     def _transform_display_property(self, data: dict[str, Any]) -> dict[str, Any]:
-        """DisplayPropertyUpload のフィールド変換"""
+        """DisplayPropertyUpload のフィールド変換: 主要フィールドをリネーム・型/単位変換して抽出"""
         result = {}
-
-        # 基本電力情報 (フィールド名はすでにsnake_case)
         if "pow_out_sum_w" in data:
             result["pow_out_sum_w"] = data["pow_out_sum_w"]
         if "pow_get_ac_hv_out" in data:
             result["pow_get_ac_hv_out"] = data["pow_get_ac_hv_out"]
         if "pow_get_bms" in data:
             result["pow_get_bms"] = data["pow_get_bms"]
-
-        # 充電時間情報
         if "bms_chg_rem_time" in data:
-            result["bms_chg_rem_time"] = data["bms_chg_rem_time"]
+            result["bms_chg_rem_time_min"] = data["bms_chg_rem_time"]
         if "cms_chg_rem_time" in data:
-            result["cms_chg_rem_time"] = data["cms_chg_rem_time"]
-
-        # その他のフィールド
+            result["cms_chg_rem_time_min"] = data["cms_chg_rem_time"]
         if "bms_min_mos_temp" in data:
-            result["bms_min_mos_temp"] = data["bms_min_mos_temp"]
-
+            result["bms_min_mos_temp_c"] = data["bms_min_mos_temp"]
+        # unknown系もflat出力
+        for k, v in data.items():
+            if k.startswith("unknown") and k not in result:
+                result[k] = v
         return result
 
     def _transform_cms_bms_summary(self, data: dict[str, Any]) -> dict[str, Any]:
-        """cmdFunc32_cmdId2_Report のフィールド変換: msg32_2_1, msg32_2_2配下の全フィールドをflat dictで出力"""
+        """cmdFunc32_cmdId2_Report のフィールド変換: msg32_2_1, msg32_2_2配下の全フィールドをflat dictで出力し、主要フィールドはリネーム・型/単位変換して抽出"""
         result = {}
         # msg32_2_1配下の全フィールドをflat化
         if "msg32_2_1" in data and isinstance(data["msg32_2_1"], dict):
-            for k, v in data["msg32_2_1"].items():
-                result[f"msg32_2_1.{k}"] = v
+            d1 = data["msg32_2_1"]
+            # 主要フィールドのリネーム・型変換
+            if "cms_batt_vol_mv" in d1:
+                result["cms_batt_vol_v"] = d1["cms_batt_vol_mv"] / 1000.0  # mV→V
+            if "cms_batt_soc_percent" in d1:
+                result["cms_batt_soc_percent"] = d1["cms_batt_soc_percent"]
+            if "cms_max_chg_soc_percent" in d1:
+                result["cms_max_chg_soc_percent"] = d1["cms_max_chg_soc_percent"]
+            if "cms_min_dsg_soc_percent" in d1:
+                result["cms_min_dsg_soc_percent"] = d1["cms_min_dsg_soc_percent"]
+            if "ac_out_freq_hz_config" in d1:
+                result["ac_out_freq_hz"] = d1["ac_out_freq_hz_config"]
+            if "cms_chg_rem_time_min" in d1:
+                result["cms_chg_rem_time_min"] = d1["cms_chg_rem_time_min"]
+            if "cms_dsg_rem_time_min" in d1:
+                result["cms_dsg_rem_time_min"] = d1["cms_dsg_rem_time_min"]
+            if "cms_chg_dsg_state" in d1:
+                result["cms_chg_dsg_state"] = d1["cms_chg_dsg_state"]
+            if "bms_is_conn_state" in d1:
+                result["bms_is_conn_state"] = d1["bms_is_conn_state"]
+            if "cms_oil_off_soc_percent" in d1:
+                result["cms_oil_off_soc_percent"] = d1["cms_oil_off_soc_percent"]
+            # unknown系もflat出力
+            for k, v in d1.items():
+                if k.startswith("unknown") and f"msg32_2_1.{k}" not in result:
+                    result[f"msg32_2_1.{k}"] = v
         # msg32_2_2配下の全フィールドをflat化
         if "msg32_2_2" in data and isinstance(data["msg32_2_2"], dict):
-            for k, v in data["msg32_2_2"].items():
+            d2 = data["msg32_2_2"]
+            for k, v in d2.items():
                 result[f"msg32_2_2.{k}"] = v
         return result
 
     def _transform_bms_detailed(self, data: dict[str, Any]) -> dict[str, Any]:
-        """RuntimePropertyUpload のフィールド変換 (cmdFunc=32, cmdId=50)"""
+        """cmdFunc50_cmdId30_Report (BMS詳細ランタイム) のフィールド変換: 主要フィールドをリネーム・型/単位変換して抽出"""
         result = {}
-
-        # RuntimePropertyUpload のフィールドを直接マップ
-        if "ac_phase_type" in data:
-            result["ac_phase_type"] = data["ac_phase_type"]
-        if "pcs_work_mode" in data:
-            result["pcs_work_mode"] = data["pcs_work_mode"]
-        if "plug_in_info_pv_l_vol" in data:
-            result["plug_in_info_pv_l_vol"] = data["plug_in_info_pv_l_vol"]
-        if "temp_pcs_dc" in data:
-            result["temp_pcs_dc"] = data["temp_pcs_dc"]
-        if "temp_pcs_ac" in data:
-            result["temp_pcs_ac"] = data["temp_pcs_ac"]
+        # 主要フィールド例
         if "bms_batt_vol" in data:
-            result["bms_batt_vol"] = data["bms_batt_vol"]
+            result["bms_batt_vol_v"] = data["bms_batt_vol"] / 1000.0  # mV→V
         if "bms_batt_amp" in data:
-            result["bms_batt_amp"] = data["bms_batt_amp"]
-        if "bms_remain_cap" in data:
-            result["bms_remain_cap"] = data["bms_remain_cap"]
-        if "bms_full_cap" in data:
-            result["bms_full_cap"] = data["bms_full_cap"]
-
+            result["bms_batt_amp_a"] = data["bms_batt_amp"] / 1000.0  # mA→A
+        if "bms_batt_soc_percent_float1" in data:
+            result["bms_batt_soc_percent"] = data["bms_batt_soc_percent_float1"]
+        if "bms_batt_soh_percent_float" in data:
+            result["bms_batt_soh_percent"] = data["bms_batt_soh_percent_float"]
+        if "bms_chg_rem_time_min" in data:
+            result["bms_chg_rem_time_min"] = data["bms_chg_rem_time_min"]
+        if "bms_dsg_rem_time_min" in data:
+            result["bms_dsg_rem_time_min"] = data["bms_dsg_rem_time_min"]
+        if "cell_vol_mv" in data:
+            result["cell_vol_v_array"] = [v / 1000.0 for v in data["cell_vol_mv"]]
+        if "cell_temp_c" in data:
+            result["cell_temp_c_array"] = data["cell_temp_c"]
+        # unknown系もflat出力
+        for k, v in data.items():
+            if k.startswith("unknown") and k not in result:
+                result[k] = v
         return result
 
     def _transform_runtime_property(self, data: dict[str, Any]) -> dict[str, Any]:
         """RuntimePropertyUpload のフィールド変換"""
         # 基本的にはそのまま返す（必要に応じて変換ロジックを追加）
         return data
+
+    def _extract_unknown_fields(self, decoded_data: dict[str, Any]) -> dict[str, Any]:
+        """unknown, 未定義, unknownXX_s1/s2 などを抽出"""
+        result = {}
+
+        def _recurse(d, prefix=""):
+            for k, v in d.items():
+                if "unknown" in k:
+                    result[prefix + k] = v
+                elif isinstance(v, dict):
+                    _recurse(v, prefix + k + ".")
+
+        _recurse(decoded_data)
+        return result
 
 
 def create_processor() -> DeltaPro3PrepareDataProcessor:
