@@ -1,13 +1,9 @@
 ---
-description: 
-globs: 
-alwaysApply: true
----
----
-description: 常に従うべき指示。
+description:
 globs:
 alwaysApply: true
 ---
+
 # 基本原則 (**必ず**適用)
 
 - **参照:** 応答するときには `docs` ディレクトのドキュメント `.cursor/rules` ディレクトリの `mdc` **必ず** を参照する。
