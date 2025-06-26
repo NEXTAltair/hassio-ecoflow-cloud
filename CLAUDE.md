@@ -2,124 +2,100 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Overview
 
-This is a Home Assistant custom component for EcoFlow power stations (DELTA, RIVER, PowerStream, Glacier, Wave series). The integration provides real-time monitoring and control via EcoFlow's cloud MQTT broker, supporting 15+ device types with 400+ entities.
+EcoFlow Cloud Integration is a Home Assistant custom component that connects to EcoFlow power stations via their cloud APIs and MQTT brokers. It supports both private API (username/password) and public API (access/secret keys) authentication methods.
 
-## Development Commands
+## Development Setup
 
-### Environment Setup
-```bash
-# Install dependencies with UV package manager
-uv sync
+For setting up the development environment, refer to `docs/Contribution.md` for dev container setup with VS Code.
 
-# Reset Home Assistant environment (via VS Code Tasks)
-Tasks: Run Task → Reset homeassistant
+## Testing & Quality
 
-# Run development scripts
-uv run python main.py
-```
+**Important**: There are currently no automated tests. All testing must be done manually by running Home Assistant locally and testing the integration.
 
-### Debugging and Testing
-- Use "Home Assistant" or "Home Assistant (skip pip)" debugger in VS Code
-- Access HA instance at `http://127.0.0.1:8123/`
-- Development uses Home Assistant core as git submodule in `core/`
+### Common Development Tasks
 
-### Documentation Generation
-```bash
-# Generate device documentation
-python docs/gen.py
+Available VS Code tasks (run via `Ctrl+Shift+P` → "Tasks: Run Task"):
 
-# Update documentation (via VS Code Tasks)
-Tasks: Run Task → Generate Docs
-```
+- **Reset homeassistant**: Sets up fresh Home Assistant config directory
+- **Generate Docs**: Updates device documentation (`docs/gen.py`)
+- **Run Home Assistant Core**: Starts local Home Assistant instance 
+- **Pytest**: Runs Home Assistant core tests (limited usefulness for this integration)
+- **Ruff**: Code formatting and linting
+- **Pylint**: Additional code quality checks
 
-### Protocol Buffer Compilation
-```bash
-# Compile .proto files (when adding new device protocols)
-protoc --python_out=. *.proto
-```
+### Development Workflow
+
+After making changes:
+1. Test manually with Home Assistant (use "Reset homeassistant" then "Run Home Assistant Core")
+2. Run the "Generate Docs" task to update device documentation
+3. Replace the "Current state" section in README.md with content from generated `summary.md`
 
 ## Architecture
 
-### Core Structure
-```
-custom_components/ecoflow_cloud/
-├── api/                   # MQTT client & API communication layer
-├── devices/               # Device management & protocol handling
-│   ├── internal/         # Private MQTT API devices (delta*.py, river*.py)
-│   ├── public/           # Public REST API devices
-│   └── proto/            # Protocol Buffer definitions
-├── entities/             # Common entity base classes
-├── {sensor,switch,etc}.py # Home Assistant entity implementations
-```
+### API Clients
+- **Private API** (`api/private_api.py`): Uses username/password authentication with `api.ecoflow.com`
+- **Public API** (`api/public_api.py`): Uses access/secret key authentication with `api-e.ecoflow.com`
+- **MQTT Client** (`api/ecoflow_mqtt.py`): Handles real-time device communication via MQTT
 
-### Communication Architecture
-- **MQTT Layer**: Real-time bidirectional communication with `mqtt.ecoflow.com`
-- **Dual API Support**: Internal MQTT + Public REST APIs
-- **Protocol Buffers**: Binary serialization for internal device communication
-- **Data Holder Pattern**: Centralized state management per device
+### Device Registry
+The `devices/registry.py` maintains an ordered dictionary of all supported devices with their corresponding device classes:
+- **Internal devices**: Use private API and direct MQTT communication
+- **Public devices**: Use public API endpoints
 
-### Key Design Patterns
-1. **Config Entry Pattern**: Modern HA configuration with migration support (v5→v9)
-2. **Entity Platform Pattern**: Separate files per entity type (sensor.py, switch.py, etc.)
-3. **Device Registry Pattern**: Dynamic device discovery in `devices/registry.py`
-4. **Coordinator Pattern**: Centralized updates via `data_holder.py`
+### Device Structure
+- Each device type has both `internal/` and `public/` implementations
+- Device classes inherit from `BaseDevice` and handle entity creation
+- Protocol buffers are used for binary message parsing (in `devices/internal/proto/`)
 
-## Development Guidelines
+### Entity Types
+Supports all standard Home Assistant entity types:
+- Sensors (battery levels, power measurements, temperatures)
+- Switches (AC/DC outputs, features toggles)
+- Numbers (charge levels, power limits)
+- Selects (timeout settings, charge currents)
+- Buttons (device controls)
 
-### Code Standards (from .cursor/rules/)
-- **Strict Encapsulation**: Never access private variables directly (`_` prefixed)
-- **Modern Python Syntax**: Use `list|dict` over `typing.List|Dict`, `str|None` over `Optional[str]`
-- **Type Hints**: All functions/methods must have comprehensive type annotations
-- **Error Handling**: Use specific exceptions, avoid broad `except Exception`
-- **YAGNI Principle**: Implement only current requirements, complete one feature before starting another
+### Configuration
+- Config flow handles device discovery and authentication
+- Migration logic in `__init__.py` handles config version upgrades (currently v9)
+- Device options include refresh periods, power steps, and diagnostic modes
 
-### Architecture Constraints
-- **Tell, Don't Ask**: Objects expose behavior, not internal state
-- **Single Responsibility**: Each class/function has one clear purpose
-- **Async/Await**: All I/O operations must be asynchronous
-- **Dependency Injection**: Avoid tight coupling between components
+## Key Files
 
-### Device Implementation
-- New devices go in `devices/internal/` (MQTT) or `devices/public/` (REST API)
-- Device registration happens in `devices/registry.py`
-- Entity definitions use factory pattern for dynamic creation
-- Support for slave devices (multi-battery configurations)
+- `__init__.py`: Main integration setup, config migration, device initialization
+- `config_flow.py`: Configuration UI flow for adding devices
+- `devices/registry.py`: Central device registry mapping device types to classes
+- `api/ecoflow_mqtt.py`: MQTT client for real-time device communication
+- `devices/internal/proto/`: Protocol buffer definitions for binary message parsing
 
-## Special Considerations
+## Development Notes
 
-### MQTT Protocol
-- **Encrypted Payloads**: AES-128-ECB decryption for secure communication
-- **Dynamic Protobuf Decoding**: Runtime message type resolution
-- **Connection Resilience**: Automatic reconnection with exponential backoff
+- Device support is added by implementing both internal and public versions
+- Each device defines its available sensors, switches, numbers, and selects
+- Protocol buffer files are generated from `.proto` definitions
+- The integration supports device hierarchies (parent/child relationships)
+- Diagnostic mode provides additional debugging sensors
+- Entity availability is managed through MQTT connection status
 
-### Multi-Device Support
-- 15+ device types with device-specific implementations
-- Each device type has its own module in `devices/internal/` or `devices/public/`
-- Comprehensive entity coverage (sensors, switches, selects, numbers, buttons)
+## Dependencies
 
-### Testing and Diagnostics
-- Sample diagnostic data in `diag/` directory for each device type
-- MQTT capture tools in `scripts/ecoflow_mqtt_parser/`
-- Diagnostics integration for troubleshooting (`diagnostics.py`)
+Key external dependencies:
+- `paho-mqtt>=2.1.0`: MQTT client communication
+- `protobuf>=5.29.1`: Binary message parsing
+- `jsonpath-ng>=1.7.0`: JSON data extraction
+- `homeassistant>=2024.5.5`: Home Assistant core
 
-## Common Tasks
+## Scripts Directory
 
-### Adding New Device Support
-1. Create device module in `devices/internal/` or `devices/public/`
-2. Define entities and capabilities
-3. Register device in `devices/registry.py`
-4. Add diagnostic sample to `diag/`
-5. Update device documentation in `docs/devices/`
+Contains debugging and testing utilities:
+- MQTT capture tools for protocol analysis
+- Delta Pro 3 specific testing utilities
+- Configuration templates for MQTT debugging
 
-### Protocol Buffer Updates
-1. Update .proto files in `devices/internal/proto/`
-2. Recompile with `protoc --python_out=. *.proto`
-3. Update device handlers to use new message types
-
-### Entity Implementation
-- Inherit from appropriate base classes in `entities/`
-- Follow Home Assistant entity patterns
-- Implement proper state management through data holder
-- Add appropriate device class and entity categories
+## important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
