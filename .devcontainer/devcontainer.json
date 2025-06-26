@@ -1,10 +1,28 @@
 {
   "image": "dcbr/hass-custom-devcontainer",
   "postCreateCommand": "sudo -E container setup",
-  "postStartCommand": "sudo -E container launch",
+  "postStartCommand": "sudo -E container launch && sudo npm install -g @anthropic-ai/claude-code && sudo npm install -g @google/gemini-cli && sudo apt-get update && sudo apt-get install -y xdg-utils",
   "forwardPorts": [8123],
   "mounts": [
     "source=${localWorkspaceFolder},target=/workspace,type=bind,readonly"
-  ]
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "eamodio.gitlens",
+        "Wscats.search",
+        "google.geminicodeassist",
+        "kawamataryo.copy-python-dotted-path",
+        "github.vscode-github-actions",
+        "codezombiech.gitignore",
+        "RooVeterinaryInc.roo-cline",
+        "streetsidesoftware.code-spell-checker",
+        "Anthropic.claude-code",
+        "ms-python.mypy-type-checker",
+        "ms-python.pylint",
+        "njqdev.vscode-python-typehint"
+      ]
+    }
+  }
 //   "runArgs": ["--env-file", "${localWorkspaceFolder}/test/test.env"]
 }
