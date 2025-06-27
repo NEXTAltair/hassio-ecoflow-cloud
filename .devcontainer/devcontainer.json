@@ -1,7 +1,7 @@
 {
   "image": "dcbr/hass-custom-devcontainer",
   "postCreateCommand": "sudo -E container setup",
-  "postStartCommand": "sudo -E container launch && sudo npm install -g @anthropic-ai/claude-code && sudo npm install -g @google/gemini-cli && sudo apt-get update && sudo apt-get install -y xdg-utils",
+  "postStartCommand": "sudo -E container launch && bash -c 'source /usr/local/share/nvm/nvm.sh && npm install -g @anthropic-ai/claude-code && npm install -g @google/gemini-cli' && sudo apt-get update && sudo apt-get install -y xdg-utils",
   "forwardPorts": [8123],
   "mounts": [
     "source=${localWorkspaceFolder},target=/workspace,type=bind,readonly"
