@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File with Arguments",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            // "args": "${command:pickArgs}",
+            "env": {
+
+            },
+            "cwd": "${workspaceFolder}/custom_components/ecoflow_cloud"
+        },
+        {
+            "name": "Gen Docs",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "gen.py",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/:$PYTHONPATH"
+            },
+            "cwd": "${workspaceFolder}/docs",
+            "justMyCode": false,
+            "args": [
+                "--debug",
+            ]
+        },
+        {
+            "name": "Debug Delta Pro 3 Real Data Test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/delta_pro3_real_data_test/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/scripts/delta_pro3_real_data_test",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+    ]
+}
