@@ -7,6 +7,7 @@ from .internal import (
     river2_pro as internal_river2_pro,
     delta2_max as internal_delta2_max,
     delta_pro as internal_delta_pro,
+    delta_pro_3 as internal_delta_pro_3,
     river_max as internal_river_max,
     river_pro as internal_river_pro,
     river_mini as internal_river_mini,
@@ -15,8 +16,6 @@ from .internal import (
     powerstream as internal_powerstream,
     glacier as internal_glacier,
     wave2 as internal_wave2,
-    smart_meter as internal_smart_meter,
-    stream_ac as internal_stream_ac,
 )
 from .public import (
     delta_pro as public_delta_pro,
@@ -29,9 +28,6 @@ from .public import (
     powerstream as public_powerstream,
     delta_pro_3 as public_delta_pro_3,
     powerkit as public_powerkit,
-    smart_meter as public_smart_meter,
-    stream_ac as public_stream_ac,
-    stream_microinverter as public_stream_microinverter,
 )
 from ..devices import BaseDevice, DiagnosticDevice
 
@@ -42,6 +38,7 @@ devices: OrderedDict[str, Type[BaseDevice]] = OrderedDict[str, Type[BaseDevice]]
         "RIVER_2_MAX": internal_river2_max.River2Max,
         "RIVER_2_PRO": internal_river2_pro.River2Pro,
         "DELTA_PRO": internal_delta_pro.DeltaPro,
+        "DELTA_PRO_3": internal_delta_pro_3.DeltaPro3,
         "RIVER_MAX": internal_river_max.RiverMax,
         "RIVER_PRO": internal_river_pro.RiverPro,
         "RIVER_MINI": internal_river_mini.RiverMini,
@@ -51,9 +48,6 @@ devices: OrderedDict[str, Type[BaseDevice]] = OrderedDict[str, Type[BaseDevice]]
         "POWERSTREAM": internal_powerstream.PowerStream,
         "GLACIER": internal_glacier.Glacier,
         "WAVE_2": internal_wave2.Wave2,
-        "SMART_METER": internal_smart_meter.SmartMeter,
-        "STREAM_AC": internal_stream_ac.StreamAC,
-        "STREAM_ULTRA": internal_stream_ac.StreamAC,
         "DIAGNOSTIC": DiagnosticDevice,
     }
 )
@@ -72,10 +66,6 @@ device_by_product: OrderedDict[str, Type[BaseDevice]] = OrderedDict[
         "PowerStream": public_powerstream.PowerStream,
         "Delta Pro 3": public_delta_pro_3.DeltaPro3,
         "Power Kits": public_powerkit.PowerKit,
-        "Smart Meter": public_smart_meter.SmartMeter,
-        "Stream AC": public_stream_ac.StreamAC,
-        "Stream Ultra": public_stream_ac.StreamAC,
-        "Stream Microinverter" : public_stream_microinverter.StreamMicroinveter,
         "Diagnostic": DiagnosticDevice,
     }
 )
