@@ -2,14 +2,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Reset homeassistant",
-      "type": "shell",
-      "command": "rm -Rf ${workspaceFolder}/core/config/ && mkdir ${workspaceFolder}/core/config/ && ln -s ${workspaceFolder}/custom_components ${workspaceFolder}/core/config/custom_components",
-      "problemMatcher": [
-        "$python"
-      ]
-    },
-    {
       "label": "Generate Docs",
       "type": "shell",
       "options": {
@@ -21,23 +13,6 @@
       "command": "python gen.py",
       "problemMatcher": [
         "$python"
-      ]
-    },
-    {
-      "label": "Run Home Assistant Core",
-      "type": "shell",
-      "command": "hass -c ./config",
-      "group": "test",
-      "options": {
-        "cwd": "${workspaceFolder}/core"
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      },
-      "problemMatcher": [],
-      "dependsOn": [
-        "Compile English translations"
       ]
     },
     {

@@ -1,46 +1,46 @@
 # EcoFlow Cloud Integration Development Makefile
 # Provides shortcuts for common development tasks
 
-.PHONY: help reset docs run clean dev
+.PHONY: help setup docs run clean dev
 
 # Default target
 help:
 	@echo "EcoFlow Cloud Integration Development Commands:"
 	@echo ""
 	@echo "Setup & Environment:"
-	@echo "  reset         - Reset Home Assistant configuration"
+	@echo "  setup         - Setup Home Assistant configuration"
 	@echo ""
 	@echo "Development:"
 	@echo "  docs          - Generate device documentation"
 	@echo "  run           - Run Home Assistant Core"
-	@echo "  dev           - Setup development environment (reset + docs)"
+	@echo "  dev           - Setup development environment (setup + docs)"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  clean         - Clean up generated files"
 	@echo "  update-readme - Reminder to update README with generated docs"
 
 # Setup & Environment
-reset:
-	@echo "Updating Home Assistant core to latest..."
-	if [ ! -d core ]; then \
-		git clone https://github.com/home-assistant/core.git; \
-	fi
-	@echo "Resetting Home Assistant configuration..."
-	rm -Rf ./core/config/
-	mkdir ./core/config/
-	ln -s $(PWD)/custom_components ./core/config/custom_components
+setup:
+	@echo "Setting up Home Assistant configuration..."
+	# Create config directory if it doesn't exist
+	mkdir -p ./core/config/
+	# Generate basic configuration using Home Assistant script
+	cd core && hass --script ensure_config -c config
+	# Create symlink to custom components
+	ln -sf $(PWD)/custom_components ./core/config/custom_components
+	@echo "Home Assistant configuration setup complete!"
 
 # Development
 docs:
 	@echo "Generating device documentation..."
 	cd docs && PYTHONPATH=$(PWD):$$PYTHONPATH python gen.py
 
-run: reset
+run:
 	@echo "Starting Home Assistant Core..."
 	cd core && hass -c ./config
 
 # Development shortcuts
-dev: reset docs
+dev: setup docs
 	@echo "Development environment ready!"
 	@echo "You can now run 'make run' to start Home Assistant"
 

@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python Debugger: Current File with Arguments",
             "type": "debugpy",
@@ -29,18 +30,6 @@
             "args": [
                 "--debug",
             ]
-        },
-        {
-            "name": "Debug Delta Pro 3 Real Data Test",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/scripts/delta_pro3_real_data_test/main.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "cwd": "${workspaceFolder}/scripts/delta_pro3_real_data_test",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}"
-            }
         }
     ]
 }

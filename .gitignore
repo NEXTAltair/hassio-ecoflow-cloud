@@ -8,3 +8,4 @@ requirements.test.txt
 requirements.txt
 setup.cfg
 tests
+test/test.env
