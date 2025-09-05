@@ -456,6 +456,7 @@ class DeltaPro3(BaseDevice):
 
             # HeaderMessageとしてデコードを試行
             try:
+                from .proto import ef_dp3_iobroker_pb2 as pb2
                 header_msg = pb2.HeaderMessage()
                 header_msg.ParseFromString(raw_data)
             except AttributeError as e:
@@ -546,6 +547,9 @@ class DeltaPro3(BaseDevice):
 
         try:
             _LOGGER.debug(f"Decoding message: cmdFunc={cmd_func}, cmdId={cmd_id}")
+            
+            # Import pb2 module
+            from .proto import ef_dp3_iobroker_pb2 as pb2
 
             if cmd_func == 254 and cmd_id == 21:
                 # DisplayPropertyUpload
