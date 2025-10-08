@@ -87,13 +87,76 @@ git checkout dev
 - `.claude/` (entire directory)
 - `.cursor/` (entire directory)
 - `docs_4ai/` (entire directory)
-- `scripts/` (entire directory)
-- `.devcontainer/` (entire directory)
+- `scripts/` (dev-specific scripts)
+- `.devcontainer/post-start.sh` (dev customization)
 - `.vscode/tasks.json`
 - `CLAUDE.md` (this file)
 - `Makefile`
 - `.python-version`
+- `.gitattributes` (dev-only merge strategy)
 - Any test/debug/research scripts
+
+**Note**: `.devcontainer/devcontainer.json` exists in both branches:
+- `main`: Uses upstream version (minimal config)
+- `dev`: Extended with AI tools and custom setup
+
+## Branch Separation Implementation
+
+The repository uses the following mechanisms to keep branches separate:
+
+### 1. .gitignore (on main branch)
+The `main` branch `.gitignore` excludes all dev-only files, preventing accidental commits:
+```gitignore
+# Development-only files
+.claude/
+.cursor/
+docs_4ai/
+scripts/delta_pro3_*/
+.devcontainer/post-start.sh
+CLAUDE.md
+Makefile
+.python-version
+```
+
+### 2. .gitattributes (on dev branch)
+The `dev` branch `.gitattributes` prevents dev customizations from overwriting main during merges:
+```gitattributes
+.devcontainer/devcontainer.json merge=ours
+.devcontainer/post-start.sh merge=ours
+.gitignore merge=ours
+```
+
+### 3. Recommended Workflow
+
+**Syncing upstream changes to main:**
+```bash
+git checkout main
+git fetch upstream
+git merge upstream/main
+# Main is now clean with upstream changes
+```
+
+**Cherry-picking DeltaPro3 changes from dev to main:**
+```bash
+git checkout main
+git cherry-pick <commit-hash>  # Pick only core code commits
+# Only include custom_components/ecoflow_cloud/ changes
+```
+
+**Merging main updates into dev:**
+```bash
+git checkout dev
+git merge main
+# .gitattributes ensures dev configs aren't overwritten
+```
+
+**Creating PR to upstream:**
+```bash
+git checkout main
+# Verify only DeltaPro3 core changes exist
+git diff upstream/main
+# Create PR from main branch
+```
 
 ## Overview
 
