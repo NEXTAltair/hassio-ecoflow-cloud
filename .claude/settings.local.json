@@ -13,9 +13,23 @@
       "Bash(true)",
       "Bash(git fetch:*)",
       "Bash(git ls-tree:*)",
+      "Bash(git branch:*)",
+      "Bash(git status:*)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": []
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '\n🔍 Current branch:' && git branch --show-current && echo '\n⚠️  Remember: Check CLAUDE.md for branch strategy!'"
+          }
+        ]
+      }
+    ]
   }
 }

@@ -2,6 +2,99 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Repository Structure & Branch Strategy
+
+**CRITICAL: Always verify which branch you are working on before making changes.**
+
+### Remote Repositories
+- **upstream**: https://github.com/tolwi/hassio-ecoflow-cloud.git (original project)
+- **origin**: https://github.com/NEXTAltair/hassio-ecoflow-cloud.git (your fork)
+
+### Branch Purposes
+
+#### `main` branch - **KEEP CLEAN**
+**Purpose**: Upstream sync + minimal DeltaPro3 support changes only
+- Merge latest changes from `upstream/main`
+- Contains ONLY essential code changes for DeltaPro3 support
+- **NO development artifacts, documentation, scripts, or AI assistant configurations**
+- Ready to create pull requests to upstream at any time
+- Changed files should be limited to:
+  - `custom_components/ecoflow_cloud/` (core integration code only)
+  - Essential configuration files if absolutely necessary
+
+#### `dev` branch - **DEVELOPMENT WORKSPACE** (Current branch)
+**Purpose**: Active development, experimentation, and all supporting materials
+- Contains AI assistant configurations (`.claude/`, `.cursor/`)
+- Development documentation (`docs_4ai/`)
+- Research scripts (`scripts/`)
+- Development tools (`.devcontainer/`, `Makefile`, `CLAUDE.md`)
+- Work-in-progress features and experiments
+- **~79 files** differ from main branch - this is intentional
+
+**File categories in dev branch:**
+- `.claude/`, `.cursor/` - AI assistant configurations
+- `docs_4ai/` - Development documentation and specifications
+- `scripts/` - Testing, debugging, and research scripts
+- `.devcontainer/`, `.vscode/` - Development environment setup
+- `CLAUDE.md`, `Makefile` - Development tooling
+
+### Working with Branches
+
+**Before making ANY changes:**
+1. Run `git branch` to verify current branch
+2. Ask yourself: "Does this change need to go to upstream?"
+   - YES → Ensure you're on `main`, keep changes minimal
+   - NO → Switch to `dev` branch
+
+**When syncing with upstream:**
+```bash
+git checkout main
+git fetch upstream
+git merge upstream/main
+# Only commit DeltaPro3-related changes
+```
+
+**When working on features/experiments:**
+```bash
+git checkout dev
+# All development work, scripts, docs go here
+```
+
+### Pre-Task Checklist for Claude Code
+
+**MANDATORY: Execute this checklist at the start of EVERY session:**
+
+1. **Verify current branch**
+   ```bash
+   git branch
+   ```
+   - Expected: `* dev` for development work
+   - If on `main`: STOP and confirm with user before proceeding
+
+2. **Understand the task scope**
+   - Is this a core integration change that should go to upstream? → Use `main`
+   - Is this development/research/tooling? → Use `dev`
+   - When in doubt, ASK THE USER
+
+3. **Review uncommitted changes**
+   ```bash
+   git status
+   ```
+   - Identify which branch these changes belong to
+   - Never mix dev-only files with main branch commits
+
+### Files that should NEVER be on `main` branch
+- `.claude/` (entire directory)
+- `.cursor/` (entire directory)
+- `docs_4ai/` (entire directory)
+- `scripts/` (entire directory)
+- `.devcontainer/` (entire directory)
+- `.vscode/tasks.json`
+- `CLAUDE.md` (this file)
+- `Makefile`
+- `.python-version`
+- Any test/debug/research scripts
+
 ## Overview
 
 EcoFlow Cloud Integration is a Home Assistant custom component that connects to EcoFlow power stations via their cloud APIs and MQTT brokers. It supports both private API (username/password) and public API (access/secret keys) authentication methods.
