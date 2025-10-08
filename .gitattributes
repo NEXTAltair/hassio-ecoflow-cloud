@@ -1,0 +1,7 @@
+# Git attributes for hassio-ecoflow-cloud
+
+# Prevent dev-specific customizations from overwriting main branch during merges
+# When merging dev -> main, keep main's version of these files
+.devcontainer/devcontainer.json merge=ours
+.devcontainer/post-start.sh merge=ours
+.gitignore merge=ours
