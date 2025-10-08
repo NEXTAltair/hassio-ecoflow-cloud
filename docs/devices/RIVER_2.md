@@ -8,8 +8,8 @@
 - State of Health (`bms_bmsStatus.soh`)
 - Battery Level (`bms_emsStatus.lcdShowSoc`)
 - Battery Charging State (`bms_emsStatus.chgState`)
-- Total In Power (`pd.wattsInSum`)
-- Total Out Power (`pd.wattsOutSum`)
+- Total In Power (`pd.wattsInSum`) (energy:  _[Device Name]_ Total In  Energy)
+- Total Out Power (`pd.wattsOutSum`) (energy:  _[Device Name]_ Total Out  Energy)
 - Solar In Current (`inv.dcInAmp`)
 - Solar In Voltage (`inv.dcInVol`)
 - AC In Power (`inv.inputWatts`)
@@ -39,7 +39,7 @@
 - AC Always On (`pd.acAutoOutConfig` -> `{"moduleType": 1, "operateType": "acAutoOutConfig", "params": {"acAutoOutConfig": "VALUE", "minAcOutSoc": 5}}`)
 - X-Boost Enabled (`mppt.cfgAcXboost` -> `{"moduleType": 5, "operateType": "acOutCfg", "params": {"enabled": 255, "out_voltage": -1, "out_freq": 255, "xboost": "VALUE"}}`)
 - DC (12V) Enabled (`pd.carState` -> `{"moduleType": 5, "operateType": "mpptCar", "params": {"enabled": "VALUE"}}`)
-- Backup Reserve Enabled (`pd.watchIsConfig` -> `{"moduleType": 1, "operateType": "watthConfig", "params": {"isConfig": "VALUE", "bpPowerSoc": -3333300, "minDsgSoc": 0, "minChgSoc": 0}}`)
+- Backup Reserve Enabled (`pd.watchIsConfig` -> `{"moduleType": 1, "operateType": "watthConfig", "params": {"isConfig": "VALUE", "bpPowerSoc": 333300, "minDsgSoc": 0, "minChgSoc": 0}}`)
 
 *Sliders (numbers)*
 - Max Charge Level (`bms_emsStatus.maxChargeSoc` -> `{"moduleType": 2, "operateType": "upsConfig", "params": {"maxChgSoc": "VALUE"}}` [50 - 100])

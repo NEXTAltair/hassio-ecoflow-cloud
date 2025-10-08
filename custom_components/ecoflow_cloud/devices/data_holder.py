@@ -1,15 +1,17 @@
 import logging
-from typing import Any, List, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
+import json
 import jsonpath_ng.ext as jp
-from homeassistant.util import dt, utcnow
+from homeassistant.util import dt
 
 _LOGGER = logging.getLogger(__name__)
 
 _T = TypeVar("_T")
 
 
-class BoundFifoList(List):
+class BoundFifoList(list):
     def __init__(self, maxlen=20) -> None:
         super().__init__()
         self.maxlen = maxlen
@@ -21,8 +23,14 @@ class BoundFifoList(List):
 
 
 class EcoflowDataHolder:
-    def __init__(self, module_sn: str = None, collect_raw: bool = False):
+    def __init__(
+        self,
+        extract_quota_message: Callable[[dict[str, Any]], dict[str, Any]],
+        module_sn: str | None = None,
+        collect_raw: bool = False,
+    ):
         self.__collect_raw = collect_raw
+        self.extract_quota_message = extract_quota_message
         self.set = BoundFifoList[dict[str, Any]]()
         self.set_reply = BoundFifoList[dict[str, Any]]()
         self.set_reply_time = dt.utcnow().replace(
@@ -65,10 +73,13 @@ class EcoflowDataHolder:
         self.get.append(msg)
 
     def add_get_reply_message(self, msg: dict[str, Any]):
-        if "operateType" in msg and msg["operateType"] == "latestQuotas":
-            online = int(msg["data"]["online"])
-            if online == 1:
-                self.update_data({"params": msg["data"]["quotaMap"], "time": utcnow()})
+        try:
+            result = self.extract_quota_message(msg)
+        except:
+            result = None
+
+        if result is not None:
+            self.update_data(result)
 
         self.get_reply.append(msg)
         self.get_reply_time = dt.utcnow()
@@ -81,6 +92,9 @@ class EcoflowDataHolder:
         self.params_time = dt.utcnow()
 
     def update_status(self, raw: dict[str, Any]):
+        if raw is None or "params" not in raw or "status" not in raw["params"]:
+            _LOGGER.warning("No status in raw: %s", json.dumps(raw))
+            return
         self.status.update({"status": int(raw["params"]["status"])})
         self.status_time = dt.utcnow()
 

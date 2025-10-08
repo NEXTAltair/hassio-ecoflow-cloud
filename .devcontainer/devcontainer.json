@@ -23,6 +23,6 @@
         "njqdev.vscode-python-typehint"
       ]
     }
-  }
+  },
   "runArgs": ["--env-file", "${localWorkspaceFolder}/test/test.env"]
 }
