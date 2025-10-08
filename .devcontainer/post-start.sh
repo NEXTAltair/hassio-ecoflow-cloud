@@ -20,23 +20,5 @@ fi
 sudo apt-get update
 sudo apt-get install -y xdg-utils
 
-# ワークスペースに移動してHome Assistant設定をセットアップ
-cd /workspace
-echo "Setting up Home Assistant development environment..."
-make setup
-echo "Home Assistant development environment setup complete!"
-echo ""
-echo "=========================================="
-echo "🚀 Home Assistant is ready!"
-echo "🌐 Access URL: http://localhost:8123"
-echo "📁 Config directory: /workspace/core/config"
-echo "🔧 Custom components: /workspace/custom_components"
-echo "📝 Log file: /workspace/core/config/home-assistant.log"
-echo "⚙️  Make commands: make setup, make docs, make dev"
-echo "=========================================="
-echo ""
-echo "💡 Tip: Use 'make setup' to restore configuration after core updates"
-echo "💡 Tip: Use 'make docs' to generate device documentation"
-
 # Home Assistant起動
 sudo -E container launch
