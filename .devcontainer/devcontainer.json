@@ -1,6 +1,6 @@
 {
   "image": "dcbr/hass-custom-devcontainer",
-  "postCreateCommand": "sudo -E container setup && sudo chown -R vscode:vscode /usr/local/share/nvm",
+  "postCreateCommand": "sudo -E container setup && sudo chown -R vscode:vscode /usr/local/share/nvm && sudo chown -R vscode:vscode /home/vscode/.cache 2>/dev/null || true && bash .devcontainer/post-create.sh",
   "postStartCommand": "bash .devcontainer/post-start.sh",
   "forwardPorts": [8123],
   "mounts": [
@@ -26,3 +26,4 @@
   },
   "runArgs": ["--env-file", "${localWorkspaceFolder}/test/test.env"]
 }
+
