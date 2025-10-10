@@ -9,3 +9,6 @@ requirements.txt
 setup.cfg
 tests
 test/test.env
+
+# Exclude Home Assistant core repository
+core/
