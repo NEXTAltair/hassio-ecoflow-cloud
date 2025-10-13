@@ -26,7 +26,17 @@
       "mcp__serena__get_symbols_overview",
       "mcp__serena__find_file",
       "mcp__serena__find_symbol",
-      "mcp__serena__write_memory"
+      "mcp__serena__write_memory",
+      "mcp__serena__search_for_pattern",
+      "Bash(pip show:*)",
+      "Bash(~/.local/ha-venv/bin/hass --version)",
+      "Bash(~/.local/ha-venv/bin/pip show protobuf)",
+      "Bash(~/.local/ha-venv/bin/pip list)",
+      "Read(//home/vscode/.serena/logs/2025-10-08/**)",
+      "WebSearch",
+      "mcp__serena__list_memories",
+      "Bash(uv pip list:*)",
+      "Bash(protoc:*)"
     ],
     "deny": []
   },
@@ -37,6 +47,17 @@
           {
             "type": "command",
             "command": "echo '\n🔍 Current branch:' && git branch --show-current && echo '\n⚠️  Remember: Check CLAUDE.md for branch strategy!'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'protoc.*ef_dp3_iobroker.proto'; then echo '🔧 Fixing protobuf imports...'; sed -i 's/^import \\([a-z_]*\\)_pb2 as/from . import \\1_pb2 as/' custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker_pb2.py && echo '✅ Import paths fixed automatically'; fi"
           }
         ]
       }
