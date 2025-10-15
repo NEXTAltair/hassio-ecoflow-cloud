@@ -1,41 +1,25 @@
 # EcoFlow Cloud Integration Development Makefile
 # Provides shortcuts for common development tasks
+# Note: Home Assistant starts automatically via .devcontainer/post-start.sh
 
-.PHONY: help run restart stop logs status docs clean
+.PHONY: help logs status docs clean
 
 # Default target
 help:
 	@echo "EcoFlow Cloud Integration Development Commands:"
 	@echo ""
 	@echo "Development:"
-	@echo "  run           - Start Home Assistant (via container launch)"
-	@echo "  restart       - Restart Home Assistant (kills and auto-restarts)"
-	@echo "  stop          - Stop Home Assistant (disable auto-restart)"
 	@echo "  logs          - Show Home Assistant logs (tail -f)"
 	@echo "  status        - Check if Home Assistant is running"
 	@echo "  docs          - Generate device documentation"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  clean         - Clean up generated files"
+	@echo ""
+	@echo "Note: Home Assistant starts automatically when container starts"
+	@echo "      Use Home Assistant GUI to restart if needed"
 
 # Development
-run:
-	@echo "Starting Home Assistant via container launch..."
-	@sudo -E container launch
-
-restart:
-	@echo "Restarting Home Assistant..."
-	@sudo pkill -f 'hass -c /config' || true
-	@echo "Waiting for auto-restart (HASS_AUTO_RESTART=true)..."
-	@sleep 3
-	@echo "Home Assistant should be restarting now."
-	@echo "Check status with: make status"
-
-stop:
-	@echo "Stopping Home Assistant (disabling auto-restart)..."
-	@export HASS_AUTO_RESTART=false && sudo pkill -f 'hass -c /config' || true
-	@echo "Home Assistant stopped."
-
 logs:
 	@echo "Showing Home Assistant logs (Ctrl+C to exit)..."
 	@tail -f /config/home-assistant.log

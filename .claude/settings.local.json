@@ -36,7 +36,8 @@
       "WebSearch",
       "mcp__serena__list_memories",
       "Bash(uv pip list:*)",
-      "Bash(protoc:*)"
+      "Bash(protoc:*)",
+      "Bash(make status:*)"
     ],
     "deny": []
   },
