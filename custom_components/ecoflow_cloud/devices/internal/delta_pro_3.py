@@ -24,20 +24,20 @@ from custom_components.ecoflow_cloud.sensor import (
     CapacitySensorEntity,
     CyclesSensorEntity,
     InMilliampSolarSensorEntity,
+    InEnergySensorEntity,
     InMilliVoltSensorEntity,
     InVoltSolarSensorEntity,
     InWattsSensorEntity,
     InWattsSolarSensorEntity,
     LevelSensorEntity,
     MilliVoltSensorEntity,
+    OutEnergySensorEntity,
     OutMilliVoltSensorEntity,
     OutVoltDcSensorEntity,
     OutWattsDcSensorEntity,
     OutWattsSensorEntity,
     QuotaStatusSensorEntity,
     RemainSensorEntity,
-    ResettingInEnergySensorEntity,
-    ResettingOutEnergySensorEntity,
     TempSensorEntity,
     WattsSensorEntity,
 )
@@ -170,15 +170,14 @@ class DeltaPro3(BaseDevice):
                 client, self, "cms_min_dsg_soc", "Min Discharge SOC Setting"
             ),
             # Energy sensors from BMSHeartBeatReport
-            # Note: accu_chg_energy and accu_dsg_energy are in Wh, multiply by 0.001 for kWh display
+            # Note: accuChgEnergy and accuDsgEnergy are in Wh, multiply by 0.001 for kWh display
             # These fields do not exist in DisplayPropertyUpload - they come from BMSHeartBeatReport
-            # Using snake_case as received from device (confirmed in diagnostics)
-            # Using Resetting* variants to accept zero values (initial state before any charge/discharge)
-            ResettingInEnergySensorEntity(
-                client, self, "accu_chg_energy", "Total Charge Energy"
+            # Using camelCase to match upstream pattern (see stream_ac.py)
+            InEnergySensorEntity(
+                client, self, "accuChgEnergy", "Total Charge Energy"
             ),
-            ResettingOutEnergySensorEntity(
-                client, self, "accu_dsg_energy", "Total Discharge Energy"
+            OutEnergySensorEntity(
+                client, self, "accuDsgEnergy", "Total Discharge Energy"
             ),
             # Note: The following fields do not exist in any Delta Pro 3 protobuf messages:
             # - pow_in_sum_energy (Total Input Energy)
