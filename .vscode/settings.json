@@ -11,5 +11,6 @@
   "pylint.importStrategy": "fromEnvironment",
   "pylint.args": [
     "--disable=C0114,C0115,C0116"
-  ]
+  ],
+  "ruff.lineLength": 130
 }
