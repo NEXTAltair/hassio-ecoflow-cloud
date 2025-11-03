@@ -3,8 +3,7 @@ from typing import Any, override
 
 from custom_components.ecoflow_cloud.api import EcoflowApiClient
 from custom_components.ecoflow_cloud.devices import BaseDevice, const
-
-# Protocol Buffers modules are imported lazily in _prepare_data method
+from custom_components.ecoflow_cloud.devices.internal.proto import ef_dp3_iobroker_pb2 as pb2
 from custom_components.ecoflow_cloud.entities import (
     BaseNumberEntity,
     BaseSelectEntity,
@@ -346,15 +345,6 @@ class DeltaPro3(BaseDevice):
         """Prepare Delta Pro 3 data by decoding protobuf and flattening fields."""
         _LOGGER.debug(f"[DeltaPro3] _prepare_data called with {len(raw_data)} bytes")
 
-        # Lazy import of Protocol Buffers modules to avoid blocking calls
-        try:
-            from .proto import ef_dp3_iobroker_pb2 as pb2
-        except ImportError as e:
-            _LOGGER.error(f"Failed to import ef_dp3_iobroker_pb2: {e}")
-            # Fallback to parent's JSON processing
-            _LOGGER.debug("Falling back to parent JSON processing")
-            return super()._prepare_data(raw_data)
-
         flat_dict: dict[str, Any] | None = None
         decoded_data: dict[str, Any] | None = None
         try:
@@ -416,8 +406,6 @@ class DeltaPro3(BaseDevice):
 
             # Try to decode as HeaderMessage
             try:
-                from .proto import ef_dp3_iobroker_pb2 as pb2
-
                 header_msg = pb2.HeaderMessage()
                 header_msg.ParseFromString(raw_data)
             except AttributeError as e:
@@ -504,9 +492,6 @@ class DeltaPro3(BaseDevice):
 
         try:
             _LOGGER.debug(f"Decoding message: cmdFunc={cmd_func}, cmdId={cmd_id}, size={len(pdata)} bytes")
-
-            # Import pb2 module
-            from .proto import ef_dp3_iobroker_pb2 as pb2
 
             if cmd_func == 254 and cmd_id == 21:
                 # DisplayPropertyUpload

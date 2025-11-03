@@ -48,3 +48,31 @@ globs:
 このプロジェクト固有のエラーと解決策をここに記録していく。
 
 <!-- 新しいエラー記録はここに追加 -->
+
+## [2025-11-03] Protobufインポートパターンによる重複シンボルエラーとSyntaxError
+
+### 問題
+1. `duplicate symbol 'TIME_TASK_MODE'` エラー: `ef_dp3_iobroker_pb2` と `dev_apl_comm` の両方が同じシンボルを定義しており、両方を `_preload_proto.py` で事前読み込みすると競合が発生
+2. SyntaxError: `dev_apl_comm` を削除した際、空の `import` 文が残り構文エラーが発生
+3. エンティティがデータを取得できない: コードレビュー対応後、protobufのインポートパターンが不統一になり、データ取得が失敗
+
+### 原因
+- `ef_dp3_iobroker_pb2` と `dev_apl_comm` の両方が `TIME_TASK_MODE` というシンボルを定義
+- 両方を `_preload_proto.py` で同時に事前読み込みすると、protobufのdescriptor poolに同じシンボルが2回登録されようとしてエラーが発生
+- `delta_pro_3.py` で遅延インポートを使用していたが、`powerstream.py` などの他のデバイスとはパターンが異なっていた
+- `dev_apl_comm` を削除した際、空の `from ... import ()` 文が残り、Pythonの構文エラーが発生
+
+### 解決策
+1. **インポートパターンの統一**: `ef_dp3_iobroker_pb2` を `_preload_proto.py` に追加し、`delta_pro_3.py` ではモジュールトップレベルでインポート（`powerstream.py` と同じパターンに統一）
+2. **重複シンボルの回避**: `dev_apl_comm` を `_preload_proto.py` から削除し、`const.py` で必要な時に遅延インポートするように変更
+3. **構文エラーの修正**: 空の `import` 文を削除し、コメントで理由を説明
+
+**変更ファイル:**
+- `custom_components/ecoflow_cloud/_preload_proto.py`: `ef_dp3_iobroker_pb2` を追加、`dev_apl_comm` の空import文を削除
+- `custom_components/ecoflow_cloud/devices/internal/delta_pro_3.py`: モジュールトップレベルで `pb2` をインポート、遅延インポート（3箇所）を削除
+
+### 影響
+- `ef_dp3_iobroker_pb2` のインポートが他のデバイス（`powerstream.py` など）と同じパターンに統一され、保守性が向上
+- 重複シンボルエラーが解消され、Home Assistantが正常に起動できるようになった
+- エンティティが正常にデータを取得できるようになった
+- `dev_apl_comm` は必要な時だけ遅延インポートされるため、不要なメモリ使用を削減
