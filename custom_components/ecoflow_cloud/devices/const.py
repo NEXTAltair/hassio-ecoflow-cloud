@@ -147,6 +147,7 @@ SLAVE_N_REMAIN_CAPACITY = "Slave %i Remain Capacity"
 MAIN_BATTERY_LEVEL = "Main Battery Level"
 MAIN_BATTERY_LEVEL_F32 = "Main Battery Level (Precise)"
 MAIN_BATTERY_CURRENT = "Main Battery Current"
+POWER_DIFFERENCE = "Power Difference"
 TOTAL_IN_POWER = "Total In Power"
 SOLAR_IN_POWER = "Solar In Power"
 SOLAR_1_IN_POWER = "Solar (1) In Power"
@@ -403,18 +404,32 @@ BATTERY_COUNT = "Battery Count"
 BATTERY_AUTO_HEATING_ENABLED = "Battery Auto-Heating Enabled"
 ERROR_CODE = "Error Code"                      
 AC_IN_CURRENT = "AC In Current"                
- 
+
+# Smart Home Panel
+
+POWER_GRID = "Power Grid"
+POWER_GRID_TODAY = "Power Grid Today"
+BATTERY_TODAY = "Battery Today"
+EPS_MODE = "EPS Mode"
+POWER_GRID_VOLTAGE = "Power Grid Voltage"
+POWER_GRID_FREQUENCY = "Power Grid Frequency"
+
+BATTERY_N_CHARGE = "Battery %i Charge"
+BATTERY_N_LEVEL = "Battery %i Level"
+BATTERY_N_CHARGE_REMAINING_TIME = "Battery %i Charge Remaining Time"
+BATTERY_N_DISCHARGE_REMAINING_TIME = "Battery %i Discharge Remaining Time"
+BATTERY_N_TEMP = "Battery %i Temperature"
+BATTERY_N_IN_POWER = "Battery %i Input Power"
+BATTERY_N_OUT_POWER = "Battery %i Output Power"
+BATTERY_N_CURRENT = "Battery %i Current"
+CIRCUIT_N_CURRENT = "Circuit %i Current"
+
 #Smart Home Panel 2
 
-EPS_MODE = "EPS Mode"
 STORM_GUARD = "Storm Guard"
 IN_STORM_MODE = "In Storm Mode"
-POWER_GRID = "Power Grid"
-POWER_GRID_VOLTAGE = "Power Grid Voltage"
 BATTERY = "Battery"
-
 BATTERY_N_POWER = "Battery %i Power"
-BATTERY_N_LEVEL = "Battery %i Level"
 BATTERY_N_FORCE_CHARGE = "Battery %i Force Charge"
 
 RELAY_N_OPERATION_COUNT = "Relay %i Operation Count"

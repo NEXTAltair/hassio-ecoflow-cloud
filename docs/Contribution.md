@@ -2,6 +2,7 @@
 
 1. open an issue
 1. make a fork of this repo
+1. sync your fork main with upstream
 1. make your changes
 1. test it (manual because right now their a no automated tests)
 1. make a pull request
