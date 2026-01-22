@@ -1,10 +1,10 @@
 __pycache__
 venv
+.venv
 .idea
 .DS_Store
 .vscode/settings.json
 .coverage
 requirements.test.txt
-requirements.txt
 setup.cfg
 tests

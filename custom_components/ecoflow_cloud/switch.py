@@ -17,9 +17,7 @@ from .entities import BaseSwitchEntity
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
-):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     client: EcoflowApiClient = hass.data[ECOFLOW_DOMAIN][entry.entry_id]
     for sn, device in client.devices.items():
         async_add_entities(device.switches(client))
@@ -58,6 +56,7 @@ class EnabledEntity(BaseSwitchEntity[int]):
         if self._command:
             value = self._disable_value if self._disable_value is not None else 0
             self.send_set_message(value, self.command_dict(value))
+
 
 class BitMaskEnableEntity(EnabledEntity):
     """
@@ -119,20 +118,13 @@ class BitMaskEnableEntity(EnabledEntity):
             enabled,
             auto_enable,
         )
-        self._attr_unique_id = self._gen_unique_id(
-            self._device.device_data.sn, switchKey
-        )
+        self._attr_unique_id = self._gen_unique_id(self._device.device_data.sn, switchKey)
 
     def _update_value(self, val: Any) -> bool:
         self.bitmask = ("{0:06b}".format(val))[::-1]
         self._attr_is_on = bool(int(self.bitmask[self.switchNumber - 1]))
         _LOGGER.debug(
-            "Updating switch "
-            + self._attr_unique_id
-            + " with value "
-            + str(val)
-            + " to "
-            + self._attr_is_on.__str__()
+            "Updating switch " + str(self._attr_unique_id) + " with value " + str(val) + " to " + str(self._attr_is_on)
         )
         return True
 
@@ -181,7 +173,17 @@ class BeeperEntity(EnabledEntity):
         enableValue: Any = 0,
         disableValue: Any = 1,
     ):
-        super().__init__(client, device, mqtt_key, title, command, enabled, auto_enable, enableValue, disableValue)
+        super().__init__(
+            client,
+            device,
+            mqtt_key,
+            title,
+            command,
+            enabled,
+            auto_enable,
+            enableValue,
+            disableValue,
+        )
 
     @property
     def icon(self) -> str | None:
