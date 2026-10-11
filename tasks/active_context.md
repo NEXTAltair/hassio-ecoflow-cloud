@@ -18,12 +18,16 @@
 ## ブランチと移行内容
 
 - 作業ブランチ: 作り直した`dev`。基点は`main`の`1d7899e`。
-  新しい`dev`にはリモートtrackingを設定していない。
+  新しい`dev`は`origin/dev`へ公開し、trackingを設定した。
 - `main`は`upstream/main`のv1.7.2（`de02d68`）を取り込み済み。
   `main`のツリーはupstreamと完全一致する。今回の作業では`main`を変更していない。
 - 旧`dev`は`archive/dev-20261011`（`f786cad`）へ保存した。
   旧HEAD `ccdd092`に、未コミットだったmain追従の記録と今回の計画をコミットした状態。
-  `origin/dev`は旧履歴のまま。ローカル枝の作成・改名のみで、pushしていない。
+  `origin/archive/dev-20261011`にも同じ旧履歴を公開して保存した。
+- 2026-10-11の明示依頼で`main`と新しい`dev`を`origin`へpushした。
+  旧履歴の保存と両枝の更新をatomicで反映し、`dev`だけに旧HEADを指定した
+  `--force-with-lease`を使った。両枝と保存用ブランチのリモートHEADを確認済み。
+  `main`は`origin/main`を、保存用ブランチは同名のリモート枝を追跡する。
 - 旧`dev`と以前の`main`（`f1ca609`）の統合コード差分はprotoコメント1行だけだった。
   新しい`dev`の統合コードは最新`main`を使い、そのコメント変更（元コミット`ccdd092`）を移植した。
 - 移行したのは隔離コンテナ・エディター設定・Markdown資料・protoコメント。
