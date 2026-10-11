@@ -1,0 +1,67 @@
+name: ecoflow-cloud-dev
+
+services:
+  development:
+    image: ecoflow-cloud-dev-tools:ha2026.10.0
+    init: true
+    command: ["sleep", "infinity"]
+    environment:
+      MYPY_CACHE_DIR: /home/vscode/.cache/mypy
+      RUFF_CACHE_DIR: /home/vscode/.cache/ruff
+      # Docker Desktop bind ownership differs from vscode's UID. Trust this workspace only.
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: /workspace
+    networks:
+      - default
+      - tools
+    volumes:
+      - type: bind
+        source: ..
+        target: /workspace
+      - type: volume
+        source: ha-config
+        target: /ha-state
+        read_only: true
+    depends_on:
+      homeassistant:
+        condition: service_started
+    labels:
+      io.ecoflow.dev-only: "true"
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:2026.10.0@sha256:1b64d38f38d922bf9d59336451fd6453e1d614f934456af4ee3d2a51061be3a4
+    environment:
+      TZ: Asia/Tokyo
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - type: volume
+        source: ha-config
+        target: /config
+      - type: bind
+        source: ./ha-config/configuration.yaml
+        target: /config/configuration.yaml
+        read_only: true
+      - type: bind
+        source: ../custom_components
+        target: /config/custom_components
+        read_only: true
+    restart: unless-stopped
+    stop_grace_period: 60s
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8123/', timeout=3).read(1)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 12
+    labels:
+      io.ecoflow.dev-only: "true"
+
+volumes:
+  ha-config:
+
+networks:
+  default:
+    internal: true
+  tools:
+    # Editors and dependency maintenance can use the internet; HA cannot.

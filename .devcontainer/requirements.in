@@ -1,0 +1,9 @@
+# Development only; upstream dependencies remain in pyproject.toml.
+homeassistant==2026.10.0
+paho-mqtt==2.1.0
+# Home Assistant 2026.10.0 package_constraints.txt.
+protobuf==7.36.0
+jsonpath-ng>=1.7.0
+ruff>=0.16.1
+mypy>=1.19.1
+types-protobuf==6.32.1.20251210

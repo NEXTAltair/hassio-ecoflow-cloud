@@ -1,0 +1,6 @@
+# Preserve Linux line endings when the development files are checked out on Windows.
+*.sh text eol=lf
+.devcontainer/Dockerfile text eol=lf
+.devcontainer/*.yaml text eol=lf
+.devcontainer/ha-config/*.yaml text eol=lf
+.devcontainer/requirements.* text eol=lf

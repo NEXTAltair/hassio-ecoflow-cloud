@@ -3662,3 +3662,8 @@ from Home Assistant.
 
 </p></details>
 
+## Development on this fork
+
+The `dev` branch keeps the isolated HA 2026.10.0 environment and research notes.
+See [.devcontainer/README.md](.devcontainer/README.md) for setup and checks.
+Keep development changes separate when selecting fixes for `main` or upstream.

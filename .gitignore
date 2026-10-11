@@ -12,3 +12,9 @@ tests
 tools
 mise.local.toml
 .claude
+
+# Local Home Assistant state and private research configuration.
+/core/
+/test/test.env
+/scripts/config.json
+/scripts/delta_pro3_real_data_test/test_results/

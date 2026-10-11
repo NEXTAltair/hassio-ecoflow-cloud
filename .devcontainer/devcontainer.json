@@ -1,8 +1,37 @@
 {
-  "image": "dcbr/hass-custom-devcontainer",
-  "postCreateCommand": "sudo -E container setup",
-  "postStartCommand": "if [ -f /workspace/.devcontainer/.env ]; then set -a && . /workspace/.devcontainer/.env && set +a && sudo -E python3 /workspace/.devcontainer/setup_ecoflow_config.py; fi && sudo -E container launch",
-  "appPort": ["8123:8123", "7357:4357"],
+  "name": "EcoFlow development (HA 2026.10.0)",
+  "dockerComposeFile": "compose.yaml",
+  "service": "development",
+  "runServices": ["development", "homeassistant"],
   "workspaceFolder": "/workspace",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind"
+  "initializeCommand": ["docker", "build", "--tag", "ecoflow-cloud-dev-tools:ha2026.10.0", "${localWorkspaceFolder}/.devcontainer"],
+  "remoteUser": "vscode",
+  "overrideCommand": false,
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+  "forwardPorts": ["homeassistant:8123"],
+  "portsAttributes": {
+    "8123": { "label": "Isolated development HA", "onAutoForward": "notify" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.debugpy",
+        "ms-python.vscode-pylance",
+        "ms-python.mypy-type-checker",
+        "charliermarsh.ruff",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/home/vscode/.local/ha-venv/bin/python",
+        "python.analysis.typeCheckingMode": "off",
+        "python.testing.pytestEnabled": false,
+        "ruff.importStrategy": "fromEnvironment",
+        "mypy-type-checker.importStrategy": "fromEnvironment",
+        "remote.localPortHost": "localhost"
+      }
+    }
+  }
 }

@@ -1,19 +1,12 @@
 {
   "version": "2.0.0",
   "tasks": [
-    {
-      "label": "Generate Docs (workspace/venv)",
-      "type": "shell",
-      "command": "PYTHONPATH=/workspace /workspace/venv/bin/python gen.py",
-      "options": {
-        "cwd": "${workspaceFolder}/docs"
-      },
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "clear": true
-      },
-      "problemMatcher": []
-    }
+    { "label": "EcoFlow: check", "type": "shell", "command": "bash .devcontainer/dev.sh check", "problemMatcher": [] },
+    { "label": "EcoFlow: lint", "type": "shell", "command": "bash .devcontainer/dev.sh lint", "problemMatcher": [] },
+    { "label": "EcoFlow: typecheck", "type": "shell", "command": "bash .devcontainer/dev.sh typecheck", "problemMatcher": [] },
+    { "label": "EcoFlow: smoke", "type": "shell", "command": "bash .devcontainer/dev.sh smoke", "problemMatcher": [] },
+    { "label": "EcoFlow: HA status", "type": "shell", "command": "bash .devcontainer/dev.sh status", "problemMatcher": [] },
+    { "label": "EcoFlow: HA logs", "type": "shell", "command": "bash .devcontainer/dev.sh logs", "problemMatcher": [] },
+    { "label": "Generate Docs", "type": "shell", "command": "bash .devcontainer/dev.sh docs", "problemMatcher": [] }
   ]
 }
