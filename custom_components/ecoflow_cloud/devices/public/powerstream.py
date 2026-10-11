@@ -29,8 +29,8 @@ from custom_components.ecoflow_cloud.sensor import (
     LevelSensorEntity,
     MilliampSensorEntity,
     MiscSensorEntity,
+    QuotaScheduledStatusSensorEntity,
     RemainSensorEntity,
-    StatusSensorEntity,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ class PowerStream(BaseDevice):
             MiscSensorEntity(client, self, "20_1.invErrCode", "Inverter Error Code", False),
             MiscSensorEntity(client, self, "20_1.invWarnCode", "Inverter Warning Code", False),
             MiscSensorEntity(client, self, "20_1.invStatue", "Inverter Status", False),
-            DeciwattsSensorEntity(client, self, "20_1.permanentWatts", "Other Loads"),
+            DeciwattsSensorEntity(client, self, "20_1.permanentWatts", const.CUSTOM_LOAD_POWER),
             DeciwattsSensorEntity(client, self, "20_1.dynamicWatts", "Smart Plug Loads"),
             DeciwattsSensorEntity(client, self, "20_1.ratedPower", "Rated Power"),
             MiscSensorEntity(client, self, "20_1.lowerLimit", "Lower Battery Limit", False),
@@ -151,7 +151,7 @@ class PowerStream(BaseDevice):
                 client,
                 self,
                 "20_1.permanentWatts",
-                "Custom load power settings",
+                const.CUSTOM_LOAD_POWER,
                 0,
                 800,
                 lambda value: {
@@ -193,5 +193,6 @@ class PowerStream(BaseDevice):
         res = to_plain(res)
         return res
 
-    def _status_sensor(self, client: EcoflowApiClient) -> StatusSensorEntity:
-        return StatusSensorEntity(client, self)
+    def _status_sensor(self, client: EcoflowApiClient) -> QuotaScheduledStatusSensorEntity:
+        # Keep quota fallback active even while MQTT stream is sparse.
+        return QuotaScheduledStatusSensorEntity(client, self, 60, "Status", "status")

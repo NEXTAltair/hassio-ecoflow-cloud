@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import ssl
-import time
+from collections.abc import Callable
 from typing import Any
 
 from homeassistant.core import callback
@@ -16,10 +16,15 @@ from . import EcoflowMqttInfo
 
 _LOGGER = logging.getLogger(__name__)
 
+# paho maps the v3.1.1 CONNACK codes 4 and 5 onto these names; "Banned" is MQTT 5 only
+AUTH_FAILURE_REASONS = frozenset({"Bad user name or password", "Not authorized", "Banned"})
+
 
 class EcoflowMQTTClient:
     def __init__(self, mqtt_info: EcoflowMqttInfo, devices: dict[str, BaseDevice]):
         self.connected = False
+        self.auth_failed = False
+        self.on_auth_failure: Callable[[], None] | None = None
         self.__mqtt_info = mqtt_info
         self.__devices: dict[str, BaseDevice] = devices
 
@@ -45,8 +50,11 @@ class EcoflowMQTTClient:
         _LOGGER.info(
             f"Connecting to MQTT Broker {self.__mqtt_info.url}:{self.__mqtt_info.port} with client id {self.__mqtt_info.client_id} and username {self.__mqtt_info.username}"
         )
-        self.__client.connect(self.__mqtt_info.url, self.__mqtt_info.port, keepalive=15)
-        self.__client.loop_start()
+        try:
+            self.__client.connect(self.__mqtt_info.url, self.__mqtt_info.port, keepalive=15)
+            self.__client.loop_start()
+        except TimeoutError:
+            _LOGGER.exception("Initial EcoFlow MQTT connection timed out; entities will retry reconnect from status updates")
 
     def is_connected(self):
         return self.__client.is_connected()
@@ -72,9 +80,12 @@ class EcoflowMQTTClient:
     ):
         if rc == 0:
             self.connected = True
+            self.auth_failed = False
             target_topics = [(topic, 1) for topic in self.__target_topics()]
             self.__client.subscribe(target_topics)
             _LOGGER.info(f"Subscribed to MQTT topics {target_topics}")
+        elif rc.getName() in AUTH_FAILURE_REASONS:
+            self.__handle_auth_failure(client, userdata, rc)
         else:
             self.__log_with_reason("connect", client, userdata, rc)
 
@@ -95,7 +106,6 @@ class EcoflowMQTTClient:
         self.connected = False
         if reason_code.is_failure:
             self.__log_with_reason("disconnect", client, userdata, reason_code)
-            time.sleep(5)
 
     @callback
     def _on_message(self, client, userdata, message: MQTTMessage):
@@ -105,11 +115,23 @@ class EcoflowMQTTClient:
                     _LOGGER.debug(f"Message for {sn} and Topic {message.topic} : {message.payload.hex()}")
         except UnicodeDecodeError as error:
             _LOGGER.error(f"UnicodeDecodeError: {error}. Ignoring message and waiting for the next one.")
+        except Exception:
+            _LOGGER.error("Unexpected error processing MQTT message on topic %s", message.topic, exc_info=True)
 
     def stop(self):
         self.__client.unsubscribe(self.__target_topics())
         self.__client.loop_stop()
         self.__client.disconnect()
+
+    def __handle_auth_failure(self, client, userdata, reason_code: ReasonCode) -> None:
+        if self.auth_failed:
+            return
+        self.auth_failed = True
+        # paho would otherwise retry the rejected credentials forever
+        self.__client.loop_stop()
+        self.__log_with_reason("connect", client, userdata, reason_code)
+        if self.on_auth_failure is not None:
+            self.on_auth_failure()
 
     def __log_with_reason(self, action: str, client, userdata, reason_code: ReasonCode):
         _LOGGER.error(f"MQTT {action}: {reason_code.getName()} ({self.__mqtt_info.client_id}) - {userdata}")
@@ -119,9 +141,9 @@ class EcoflowMQTTClient:
             info = self.__client.publish(topic, message, 1)
             _LOGGER.debug("Sending " + str(message) + " :" + str(info) + "(" + str(info.is_published()) + ")")
         except RuntimeError as error:
-            _LOGGER.error(error, "Error on topic " + topic + " and message " + str(message))
+            _LOGGER.error("Error on topic %s and message %s: %s", topic, message, error)
         except Exception as error:
-            _LOGGER.debug(error, "Error on topic " + topic + " and message " + str(message))
+            _LOGGER.debug("Error on topic %s and message %s: %s", topic, message, error)
 
     def __target_topics(self) -> list[str]:
         topics = []

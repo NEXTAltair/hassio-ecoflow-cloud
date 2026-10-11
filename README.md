@@ -19,6 +19,11 @@ The quickest way to install this integration is via [HACS](https://github.com/ha
 2. Restart Home Assistant
 3. Once restart is done, use `Add Integration` → `EcoflowCloud`.
 
+### 🌍 Regional API Hosts (Important for European Users)
+EcoFlow strictly separates accounts by region. If you encounter the error `Account doesn't exist or incorrect password` during the integration setup, verify your `api_host` setting:
+- **Global / US:** `api.ecoflow.com` (Default)
+- **Europe:** `api-e.ecoflow.com`
+
 ### Manual installation options
 - Install as a [custom repository](https://github.com/tolwi/hassio-ecoflow-cloud) via [HACS](https://github.com/hacs/integration)
 - Manually download and extract to the custom_components directory
@@ -28,12 +33,66 @@ Restart Home Assistant. Once restart is done, use `Add Integration` → `Ecoflow
 ## Device Management
 For information on how to add, remove, and configure devices, please refer to the [Device Management Documentation](docs/device_management.md).
 
+## EcoFlow API modes
+
+The integration supports two EcoFlow cloud API modes. They expose different data,
+so the same physical device can have different entities depending on the mode
+selected during setup.
+
+- `private_api` uses the same internal cloud endpoints as the EcoFlow app. It
+  usually exposes more telemetry and controls, but it is unofficial and can
+  change when EcoFlow updates app-side protocols.
+- `public_api` uses EcoFlow's public developer API. It is the safer default when
+  the device is supported there, but it can expose fewer fields, update some
+  values on a schedule, or report aggregate values differently from the app.
+
+If an entity is missing or behaves differently from the EcoFlow app, first check
+the device section below for the API mode you configured. When reporting a bug,
+include the API mode, device model, firmware version, and a diagnostic download
+from Home Assistant.
+
 ## Disclaimers
 
 ⚠️ Originally developed for personal use without a goal to cover all available device attributes
 
 ## Current state
 ### Devices available with private_api
+<details><summary> ALTERNATOR <i>(sensors: 17, switches: 1, sliders: 4, selects: 1)</i> </summary>
+<p>
+
+*Sensors*
+- Alternator In Power
+- Station Power
+- Alternator Rated Power  _(disabled)_
+- Charging Power Limit  _(disabled)_
+- Station Battery Charge
+- Discharge Remaining Time
+- Charge Remaining Time
+- Car Battery Voltage
+- Alternator Temperature
+- WiFi Signal Strength  _(disabled)_
+- Alternator Status Code  _(disabled)_
+- Operation Mode  _(disabled)_
+- Charge Current Limit  _(disabled)_
+- Reverse Charge Current Limit  _(disabled)_
+- Charge Current Max  _(disabled)_
+- Reverse Charge Current Max  _(disabled)_
+- Status
+
+*Switches*
+- Charging Enabled
+
+*Sliders (numbers)*
+- Charge Current Limit
+- Reverse Charge Current Limit
+- Car Battery Start Voltage
+- Extension Cable Length
+
+*Selects*
+- Operation Mode
+
+</p></details>
+
 <details><summary> DELTA_2 <i>(sensors: 47, switches: 8, sliders: 6, selects: 5)</i> </summary>
 <p>
 
@@ -87,33 +146,33 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- USB Enabled 
-- AC Always On 
-- Prio Solar Charging 
-- AC Enabled 
-- X-Boost Enabled 
-- DC (12V) Enabled 
-- Backup Reserve Enabled 
+- Beeper
+- USB Enabled
+- AC Always On
+- Prio Solar Charging
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
+- Backup Reserve Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- Backup Reserve Level 
-- Generator Auto Start Level 
-- Generator Auto Stop Level 
-- AC Charging Power 
+- Max Charge Level
+- Min Discharge Level
+- Backup Reserve Level
+- Generator Auto Start Level
+- Generator Auto Stop Level
+- AC Charging Power
 
 *Selects*
-- DC (12V) Charge Current 
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
-- DC (12V) Timeout 
+- DC (12V) Charge Current
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
+- DC (12V) Timeout
 
 </p></details>
 
-<details><summary> DELTA_3 <i>(sensors: 32, switches: 6, sliders: 4, selects: 5)</i> </summary>
+<details><summary> DELTA_3 <i>(sensors: 32, switches: 8, sliders: 5, selects: 7)</i> </summary>
 <p>
 
 *Sensors*
@@ -151,29 +210,174 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- AC Enabled 
-- X-Boost Enabled 
-- DC (12V) Enabled 
-- AC Always On 
-- Backup Reserve Enabled 
+- Beeper
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
+- USB Enabled
+- AC Always On
+- Backup Reserve Enabled
+- Grid Bypass
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- AC Charging Power 
-- Backup Reserve Level 
+- Max Charge Level
+- Min Discharge Level
+- AC Charging Power
+- Backup Reserve Level
+- Backup Reserve SOC
 
 *Selects*
-- DC (12V) Charge Current 
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
-- DC (12V) Timeout 
+- DC (12V) Charge Current
+- Energy Strategy
+- AC Charging Mode
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
+- DC (12V) Timeout
 
 </p></details>
 
-<details><summary> RIVER_2 <i>(sensors: 32, switches: 5, sliders: 4, selects: 5)</i> </summary>
+<details><summary> DELTA_3_1500 <i>(sensors: 44, switches: 9, sliders: 4, selects: 5)</i> </summary>
+<p>
+
+*Sensors*
+- Main Battery Level
+- Main Design Capacity  _(disabled)_
+- Main Full Capacity  _(disabled)_
+- Main Remain Capacity  _(disabled)_
+- State of Health
+- Battery Level
+- Battery Charging State
+- Total In Power (energy:  _[Device Name]_ Total In  Energy)
+- Total Out Power (energy:  _[Device Name]_ Total Out  Energy)
+- AC In Power (energy:  _[Device Name]_ AC In  Energy)
+- AC Out Power (energy:  _[Device Name]_ AC Out  Energy)
+- AC In Volts
+- AC Out Volts
+- Solar In Power (energy:  _[Device Name]_ Solar In  Energy)
+- DC Out Power
+- Type-C (1) Out Power
+- USB QC (1) Out Power
+- USB QC (2) Out Power
+- Charge Remaining Time
+- Discharge Remaining Time
+- Remaining Time
+- Inv Out Temperature
+- Cycles
+- Battery Temperature
+- Min Cell Temperature  _(disabled)_
+- Max Cell Temperature  _(disabled)_
+- Battery Volts  _(disabled)_
+- Min Cell Volts  _(disabled)_
+- Max Cell Volts  _(disabled)_
+- Slave Battery Level  _(auto)_
+- Slave Design Capacity  _(disabled)_
+- Slave Full Capacity  _(disabled)_
+- Slave Remain Capacity  _(disabled)_
+- Slave State of Health
+- Slave Battery Temperature  _(auto)_
+- Slave Min Cell Temperature  _(disabled)_
+- Slave Max Cell Temperature  _(disabled)_
+- Slave Battery Volts  _(disabled)_
+- Slave Min Cell Volts  _(disabled)_
+- Slave Max Cell Volts  _(disabled)_
+- Slave Cycles  _(auto)_
+- Slave In Power  _(auto)_
+- Slave Out Power  _(auto)_
+- Status
+
+*Switches*
+- Beeper
+- USB Enabled
+- AC Always On
+- Prio Solar Charging
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
+- Backup Reserve Enabled
+- Grid Bypass
+
+*Sliders (numbers)*
+- Max Charge Level
+- Min Discharge Level
+- Backup Reserve Level
+- AC Charging Power
+
+*Selects*
+- DC (12V) Charge Current
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
+- DC (12V) Timeout
+
+</p></details>
+
+<details><summary> DELTA_3_MAX_PLUS <i>(sensors: 32, switches: 8, sliders: 5, selects: 7)</i> </summary>
+<p>
+
+*Sensors*
+- Main Battery Level
+- Main Design Capacity  _(disabled)_
+- Main Full Capacity  _(disabled)_
+- Main Remain Capacity  _(disabled)_
+- State of Health
+- Battery Level
+- Battery Charging State
+- Total In Power (energy:  _[Device Name]_ Total In  Energy)
+- Total Out Power (energy:  _[Device Name]_ Total Out  Energy)
+- Solar In Power
+- Solar In Current
+- AC In Power
+- AC Out Power
+- AC In Volts
+- AC Out Volts
+- DC Out Power
+- Type-C (1) Out Power
+- USB QC (1) Out Power
+- USB QC (2) Out Power
+- Charge Remaining Time
+- Discharge Remaining Time
+- Remaining Time
+- PCS DC Temperature
+- PCS AC Temperature
+- Battery Temperature
+- Max Cell Temperature  _(disabled)_
+- Battery Volts  _(disabled)_
+- Min Cell Volts  _(disabled)_
+- Max Cell Volts  _(disabled)_
+- Cycles
+- Solar In Energy
+- Status
+
+*Switches*
+- Beeper
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
+- USB Enabled
+- AC Always On
+- Backup Reserve Enabled
+- Grid Bypass
+
+*Sliders (numbers)*
+- Max Charge Level
+- Min Discharge Level
+- AC Charging Power
+- Backup Reserve Level
+- Backup Reserve SOC
+
+*Selects*
+- DC (12V) Charge Current
+- Energy Strategy
+- AC Charging Mode
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
+- DC (12V) Timeout
+
+</p></details>
+
+<details><summary> RIVER_2 <i>(sensors: 34, switches: 5, sliders: 4, selects: 5)</i> </summary>
 <p>
 
 *Sensors*
@@ -197,6 +401,8 @@ For information on how to add, remove, and configure devices, please refer to th
 - DC Out Power
 - Type-C Out Power
 - USB Out Power
+- DC Mode
+- MPPT Fault
 - Charge Remaining Time
 - Discharge Remaining Time
 - Remaining Time
@@ -211,28 +417,28 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- AC Enabled 
-- AC Always On 
-- X-Boost Enabled 
-- DC (12V) Enabled 
-- Backup Reserve Enabled 
+- AC Enabled
+- AC Always On
+- X-Boost Enabled
+- DC (12V) Enabled
+- Backup Reserve Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- AC Charging Power 
-- Backup Reserve Level 
+- Max Charge Level
+- Min Discharge Level
+- AC Charging Power
+- Backup Reserve Level
 
 *Selects*
-- DC (12V) Charge Current 
-- DC Mode 
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
+- DC (12V) Charge Current
+- DC Mode
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
 
 </p></details>
 
-<details><summary> RIVER_2_MAX <i>(sensors: 32, switches: 5, sliders: 4, selects: 5)</i> </summary>
+<details><summary> RIVER_2_MAX <i>(sensors: 34, switches: 5, sliders: 4, selects: 5)</i> </summary>
 <p>
 
 *Sensors*
@@ -256,6 +462,8 @@ For information on how to add, remove, and configure devices, please refer to th
 - DC Out Power
 - Type-C Out Power
 - USB Out Power
+- DC Mode
+- MPPT Fault
 - Charge Remaining Time
 - Discharge Remaining Time
 - Remaining Time
@@ -270,28 +478,28 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- AC Enabled 
-- AC Always On 
-- X-Boost Enabled 
-- DC (12V) Enabled 
-- Backup Reserve Enabled 
+- AC Enabled
+- AC Always On
+- X-Boost Enabled
+- DC (12V) Enabled
+- Backup Reserve Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- AC Charging Power 
-- Backup Reserve Level 
+- Max Charge Level
+- Min Discharge Level
+- AC Charging Power
+- Backup Reserve Level
 
 *Selects*
-- DC (12V) Charge Current 
-- DC Mode 
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
+- DC (12V) Charge Current
+- DC Mode
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
 
 </p></details>
 
-<details><summary> RIVER_2_PRO <i>(sensors: 30, switches: 4, sliders: 4, selects: 5)</i> </summary>
+<details><summary> RIVER_2_PRO <i>(sensors: 34, switches: 4, sliders: 4, selects: 5)</i> </summary>
 <p>
 
 *Sensors*
@@ -309,10 +517,14 @@ For information on how to add, remove, and configure devices, please refer to th
 - AC In Volts
 - AC Out Volts
 - Type-C In Power
+- Solar In Current
+- Solar In Voltage
 - Solar In Power (energy:  _[Device Name]_ Solar In  Energy)
 - DC Out Power
 - Type-C Out Power
 - USB Out Power
+- DC Mode
+- MPPT Fault
 - Charge Remaining Time
 - Discharge Remaining Time
 - Remaining Time
@@ -327,23 +539,23 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- AC Enabled 
-- X-Boost Enabled 
-- DC (12V) Enabled 
-- Backup Reserve Enabled 
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
+- Backup Reserve Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- AC Charging Power 
-- Backup Reserve Level 
+- Max Charge Level
+- Min Discharge Level
+- AC Charging Power
+- Backup Reserve Level
 
 *Selects*
-- DC (12V) Charge Current 
-- DC Mode 
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
+- DC (12V) Charge Current
+- DC Mode
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
 
 </p></details>
 
@@ -389,25 +601,25 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- AC Enabled 
-- X-Boost Enabled 
-- DC (12V) Enabled 
-- AC Always On 
-- Backup Reserve Enabled 
+- Beeper
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
+- AC Always On
+- Backup Reserve Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- AC Charging Power 
-- Backup Reserve Level 
+- Max Charge Level
+- Min Discharge Level
+- AC Charging Power
+- Backup Reserve Level
 
 *Selects*
-- DC (12V) Charge Current 
-- DC Mode 
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
+- DC (12V) Charge Current
+- DC Mode
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
 
 </p></details>
 
@@ -488,26 +700,26 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- DC (12V) Enabled 
-- AC Enabled 
-- X-Boost Enabled 
-- AC Always On 
-- Backup Reserve Enabled 
+- Beeper
+- DC (12V) Enabled
+- AC Enabled
+- X-Boost Enabled
+- AC Always On
+- Backup Reserve Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- Backup Reserve Level 
-- Generator Auto Start Level 
-- Generator Auto Stop Level 
-- AC Charging Power 
+- Max Charge Level
+- Min Discharge Level
+- Backup Reserve Level
+- Generator Auto Start Level
+- Generator Auto Stop Level
+- AC Charging Power
 
 *Selects*
-- DC (12V) Charge Current 
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
+- DC (12V) Charge Current
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
 
 </p></details>
 
@@ -564,25 +776,370 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- AC HV Output Enabled 
-- AC LV Output Enabled 
-- 12V DC Output Enabled 
-- 24V DC Output Enabled 
-- X-Boost Enabled 
-- AC Energy Saving Enabled 
-- GFCI Protection Enabled 
+- Beeper
+- AC HV Output Enabled
+- AC LV Output Enabled
+- 12V DC Output Enabled
+- 24V DC Output Enabled
+- X-Boost Enabled
+- AC Energy Saving Enabled
+- GFCI Protection Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- AC Charging Power 
+- Max Charge Level
+- Min Discharge Level
+- AC Charging Power
 
 *Selects*
-- Screen Timeout 
-- AC Timeout 
-- DC Timeout 
-- AC Output Type 
+- Screen Timeout
+- AC Timeout
+- DC Timeout
+- AC Output Type
+
+</p></details>
+
+<details><summary> DELTA_PRO_ULTRA_X <i>(sensors: 68)</i> </summary>
+<p>
+
+*Sensors*
+- Battery Level
+- Total In Power (energy:  _[Device Name]_ Total In  Energy)
+- Total Out Power (energy:  _[Device Name]_ Total Out  Energy)
+- Charge Remaining Time
+- Discharge Remaining Time
+- Status
+- Battery 1 Level  _(disabled)_
+- Battery 2 Level  _(disabled)_
+- Battery 3 Level  _(disabled)_
+- Battery 4 Level  _(disabled)_
+- Battery 5 Level  _(disabled)_
+- Battery 6 Level  _(disabled)_
+- Battery 7 Level  _(disabled)_
+- Battery 8 Level  _(disabled)_
+- Battery 9 Level  _(disabled)_
+- Battery 10 Level  _(disabled)_
+- AC Input L1 Voltage  _(disabled)_
+- AC Input L1 Current  _(disabled)_
+- AC Input L1 Power  _(disabled)_
+- AC Input L2 Voltage  _(disabled)_
+- AC Input L2 Current  _(disabled)_
+- AC Input L2 Power  _(disabled)_
+- AC Out Power  _(disabled)_
+- AC 240V Output Power  _(disabled)_
+- AC 120V Output Power  _(disabled)_
+- Solar (1) In Volts  _(disabled)_
+- Solar (2) In Volts  _(disabled)_
+- AC Output Frequency  _(disabled)_
+- AC Output Power L1  _(disabled)_
+- AC Output Power L2  _(disabled)_
+- Max Charge Level  _(disabled)_
+- Min Discharge Level  _(disabled)_
+- Battery 1 Temperature  _(disabled)_
+- Battery 2 Temperature  _(disabled)_
+- Battery 3 Temperature  _(disabled)_
+- Battery 4 Temperature  _(disabled)_
+- Battery 5 Temperature  _(disabled)_
+- Battery 6 Temperature  _(disabled)_
+- Battery 7 Temperature  _(disabled)_
+- Battery 8 Temperature  _(disabled)_
+- Battery 9 Temperature  _(disabled)_
+- Battery 10 Temperature  _(disabled)_
+- Inverter Temperature 2  _(disabled)_
+- Inverter Temperature 3  _(disabled)_
+- LLC Temperature  _(disabled)_
+- PCS AC Temperature  _(disabled)_
+- PCS DC Temperature  _(disabled)_
+- Battery Bus Voltage  _(disabled)_
+- Battery Bus Current  _(disabled)_
+- CMS Battery Voltage  _(disabled)_
+- CMS Battery Current  _(disabled)_
+- Battery State of Health  _(disabled)_
+- MPPT Battery Voltage  _(disabled)_
+- MPPT Battery Current  _(disabled)_
+- Inverter Bus Voltage  _(disabled)_
+- Charging State  _(disabled)_
+- Charging State Text  _(disabled)_
+- Solar 1 MPPT Pause Count  _(disabled)_
+- Solar 2 MPPT Pause Count  _(disabled)_
+- BMS Firmware Version  _(disabled)_
+- PD Firmware Version  _(disabled)_
+- LLC Firmware Version  _(disabled)_
+- IoT Firmware Version  _(disabled)_
+- MPPT Hardware Version  _(disabled)_
+- Error Code  _(disabled)_
+- BMS Error Code  _(disabled)_
+- MPPT Error Code  _(disabled)_
+- PD Error Code  _(disabled)_
+
+</p></details>
+
+<details><summary> SMART_HOME_PANEL_3 <i>(sensors: 107)</i> </summary>
+<p>
+
+*Sensors*
+- Battery Level
+- Home Load Power (energy:  _[Device Name]_ Home Load  Energy)
+- Grid Power (energy:  _[Device Name]_ Grid  Energy)
+- Storage Output Power
+- Status
+- Grid L1 Power  _(disabled)_
+- Grid L2 Power  _(disabled)_
+- Grid L1 Voltage  _(disabled)_
+- Grid L2 Voltage  _(disabled)_
+- Grid L1 Current  _(disabled)_
+- Grid L2 Current  _(disabled)_
+- Circuit 1 Power (energy:  _[Device Name]_ Circuit 1  Energy)
+- Circuit 1 Voltage  _(disabled)_
+- Circuit 1 Current  _(disabled)_
+- Circuit 2 Power (energy:  _[Device Name]_ Circuit 2  Energy)
+- Circuit 2 Voltage  _(disabled)_
+- Circuit 2 Current  _(disabled)_
+- Circuit 3 Power (energy:  _[Device Name]_ Circuit 3  Energy)
+- Circuit 3 Voltage  _(disabled)_
+- Circuit 3 Current  _(disabled)_
+- Circuit 4 Power (energy:  _[Device Name]_ Circuit 4  Energy)
+- Circuit 4 Voltage  _(disabled)_
+- Circuit 4 Current  _(disabled)_
+- Circuit 5 Power (energy:  _[Device Name]_ Circuit 5  Energy)
+- Circuit 5 Voltage  _(disabled)_
+- Circuit 5 Current  _(disabled)_
+- Circuit 6 Power (energy:  _[Device Name]_ Circuit 6  Energy)
+- Circuit 6 Voltage  _(disabled)_
+- Circuit 6 Current  _(disabled)_
+- Circuit 7 Power (energy:  _[Device Name]_ Circuit 7  Energy)
+- Circuit 7 Voltage  _(disabled)_
+- Circuit 7 Current  _(disabled)_
+- Circuit 8 Power (energy:  _[Device Name]_ Circuit 8  Energy)
+- Circuit 8 Voltage  _(disabled)_
+- Circuit 8 Current  _(disabled)_
+- Circuit 9 Power (energy:  _[Device Name]_ Circuit 9  Energy)
+- Circuit 9 Voltage  _(disabled)_
+- Circuit 9 Current  _(disabled)_
+- Circuit 10 Power (energy:  _[Device Name]_ Circuit 10  Energy)
+- Circuit 10 Voltage  _(disabled)_
+- Circuit 10 Current  _(disabled)_
+- Circuit 11 Power (energy:  _[Device Name]_ Circuit 11  Energy)
+- Circuit 11 Voltage  _(disabled)_
+- Circuit 11 Current  _(disabled)_
+- Circuit 12 Power (energy:  _[Device Name]_ Circuit 12  Energy)
+- Circuit 12 Voltage  _(disabled)_
+- Circuit 12 Current  _(disabled)_
+- Circuit 13 Power (energy:  _[Device Name]_ Circuit 13  Energy)
+- Circuit 13 Voltage  _(disabled)_
+- Circuit 13 Current  _(disabled)_
+- Circuit 14 Power (energy:  _[Device Name]_ Circuit 14  Energy)
+- Circuit 14 Voltage  _(disabled)_
+- Circuit 14 Current  _(disabled)_
+- Circuit 15 Power (energy:  _[Device Name]_ Circuit 15  Energy)
+- Circuit 15 Voltage  _(disabled)_
+- Circuit 15 Current  _(disabled)_
+- Circuit 16 Power (energy:  _[Device Name]_ Circuit 16  Energy)
+- Circuit 16 Voltage  _(disabled)_
+- Circuit 16 Current  _(disabled)_
+- Circuit 17 Power (energy:  _[Device Name]_ Circuit 17  Energy)
+- Circuit 17 Voltage  _(disabled)_
+- Circuit 17 Current  _(disabled)_
+- Circuit 18 Power (energy:  _[Device Name]_ Circuit 18  Energy)
+- Circuit 18 Voltage  _(disabled)_
+- Circuit 18 Current  _(disabled)_
+- Circuit 19 Power (energy:  _[Device Name]_ Circuit 19  Energy)
+- Circuit 19 Voltage  _(disabled)_
+- Circuit 19 Current  _(disabled)_
+- Circuit 20 Power (energy:  _[Device Name]_ Circuit 20  Energy)
+- Circuit 20 Voltage  _(disabled)_
+- Circuit 20 Current  _(disabled)_
+- Circuit 21 Power (energy:  _[Device Name]_ Circuit 21  Energy)
+- Circuit 21 Voltage  _(disabled)_
+- Circuit 21 Current  _(disabled)_
+- Circuit 22 Power (energy:  _[Device Name]_ Circuit 22  Energy)
+- Circuit 22 Voltage  _(disabled)_
+- Circuit 22 Current  _(disabled)_
+- Circuit 23 Power (energy:  _[Device Name]_ Circuit 23  Energy)
+- Circuit 23 Voltage  _(disabled)_
+- Circuit 23 Current  _(disabled)_
+- Circuit 24 Power (energy:  _[Device Name]_ Circuit 24  Energy)
+- Circuit 24 Voltage  _(disabled)_
+- Circuit 24 Current  _(disabled)_
+- Circuit 25 Power (energy:  _[Device Name]_ Circuit 25  Energy)
+- Circuit 25 Voltage  _(disabled)_
+- Circuit 25 Current  _(disabled)_
+- Circuit 26 Power (energy:  _[Device Name]_ Circuit 26  Energy)
+- Circuit 26 Voltage  _(disabled)_
+- Circuit 26 Current  _(disabled)_
+- Circuit 27 Power (energy:  _[Device Name]_ Circuit 27  Energy)
+- Circuit 27 Voltage  _(disabled)_
+- Circuit 27 Current  _(disabled)_
+- Circuit 28 Power (energy:  _[Device Name]_ Circuit 28  Energy)
+- Circuit 28 Voltage  _(disabled)_
+- Circuit 28 Current  _(disabled)_
+- Circuit 29 Power (energy:  _[Device Name]_ Circuit 29  Energy)
+- Circuit 29 Voltage  _(disabled)_
+- Circuit 29 Current  _(disabled)_
+- Circuit 30 Power (energy:  _[Device Name]_ Circuit 30  Energy)
+- Circuit 30 Voltage  _(disabled)_
+- Circuit 30 Current  _(disabled)_
+- Circuit 31 Power (energy:  _[Device Name]_ Circuit 31  Energy)
+- Circuit 31 Voltage  _(disabled)_
+- Circuit 31 Current  _(disabled)_
+- Circuit 32 Power (energy:  _[Device Name]_ Circuit 32  Energy)
+- Circuit 32 Voltage  _(disabled)_
+- Circuit 32 Current  _(disabled)_
+
+</p></details>
+
+<details><summary> OCEAN_SMART_PANEL <i>(sensors: 131)</i> </summary>
+<p>
+
+*Sensors*
+- Battery Level
+- Home Load Power (energy:  _[Device Name]_ Home Load  Energy)
+- Grid Power (energy:  _[Device Name]_ Grid  Energy)
+- Storage Output Power
+- Status
+- Grid L1 Power  _(disabled)_
+- Grid L2 Power  _(disabled)_
+- Grid L1 Voltage  _(disabled)_
+- Grid L2 Voltage  _(disabled)_
+- Grid L1 Current  _(disabled)_
+- Grid L2 Current  _(disabled)_
+- Circuit 1 Power (energy:  _[Device Name]_ Circuit 1  Energy)
+- Circuit 1 Voltage  _(disabled)_
+- Circuit 1 Current  _(disabled)_
+- Circuit 2 Power (energy:  _[Device Name]_ Circuit 2  Energy)
+- Circuit 2 Voltage  _(disabled)_
+- Circuit 2 Current  _(disabled)_
+- Circuit 3 Power (energy:  _[Device Name]_ Circuit 3  Energy)
+- Circuit 3 Voltage  _(disabled)_
+- Circuit 3 Current  _(disabled)_
+- Circuit 4 Power (energy:  _[Device Name]_ Circuit 4  Energy)
+- Circuit 4 Voltage  _(disabled)_
+- Circuit 4 Current  _(disabled)_
+- Circuit 5 Power (energy:  _[Device Name]_ Circuit 5  Energy)
+- Circuit 5 Voltage  _(disabled)_
+- Circuit 5 Current  _(disabled)_
+- Circuit 6 Power (energy:  _[Device Name]_ Circuit 6  Energy)
+- Circuit 6 Voltage  _(disabled)_
+- Circuit 6 Current  _(disabled)_
+- Circuit 7 Power (energy:  _[Device Name]_ Circuit 7  Energy)
+- Circuit 7 Voltage  _(disabled)_
+- Circuit 7 Current  _(disabled)_
+- Circuit 8 Power (energy:  _[Device Name]_ Circuit 8  Energy)
+- Circuit 8 Voltage  _(disabled)_
+- Circuit 8 Current  _(disabled)_
+- Circuit 9 Power (energy:  _[Device Name]_ Circuit 9  Energy)
+- Circuit 9 Voltage  _(disabled)_
+- Circuit 9 Current  _(disabled)_
+- Circuit 10 Power (energy:  _[Device Name]_ Circuit 10  Energy)
+- Circuit 10 Voltage  _(disabled)_
+- Circuit 10 Current  _(disabled)_
+- Circuit 11 Power (energy:  _[Device Name]_ Circuit 11  Energy)
+- Circuit 11 Voltage  _(disabled)_
+- Circuit 11 Current  _(disabled)_
+- Circuit 12 Power (energy:  _[Device Name]_ Circuit 12  Energy)
+- Circuit 12 Voltage  _(disabled)_
+- Circuit 12 Current  _(disabled)_
+- Circuit 13 Power (energy:  _[Device Name]_ Circuit 13  Energy)
+- Circuit 13 Voltage  _(disabled)_
+- Circuit 13 Current  _(disabled)_
+- Circuit 14 Power (energy:  _[Device Name]_ Circuit 14  Energy)
+- Circuit 14 Voltage  _(disabled)_
+- Circuit 14 Current  _(disabled)_
+- Circuit 15 Power (energy:  _[Device Name]_ Circuit 15  Energy)
+- Circuit 15 Voltage  _(disabled)_
+- Circuit 15 Current  _(disabled)_
+- Circuit 16 Power (energy:  _[Device Name]_ Circuit 16  Energy)
+- Circuit 16 Voltage  _(disabled)_
+- Circuit 16 Current  _(disabled)_
+- Circuit 17 Power (energy:  _[Device Name]_ Circuit 17  Energy)
+- Circuit 17 Voltage  _(disabled)_
+- Circuit 17 Current  _(disabled)_
+- Circuit 18 Power (energy:  _[Device Name]_ Circuit 18  Energy)
+- Circuit 18 Voltage  _(disabled)_
+- Circuit 18 Current  _(disabled)_
+- Circuit 19 Power (energy:  _[Device Name]_ Circuit 19  Energy)
+- Circuit 19 Voltage  _(disabled)_
+- Circuit 19 Current  _(disabled)_
+- Circuit 20 Power (energy:  _[Device Name]_ Circuit 20  Energy)
+- Circuit 20 Voltage  _(disabled)_
+- Circuit 20 Current  _(disabled)_
+- Circuit 21 Power (energy:  _[Device Name]_ Circuit 21  Energy)
+- Circuit 21 Voltage  _(disabled)_
+- Circuit 21 Current  _(disabled)_
+- Circuit 22 Power (energy:  _[Device Name]_ Circuit 22  Energy)
+- Circuit 22 Voltage  _(disabled)_
+- Circuit 22 Current  _(disabled)_
+- Circuit 23 Power (energy:  _[Device Name]_ Circuit 23  Energy)
+- Circuit 23 Voltage  _(disabled)_
+- Circuit 23 Current  _(disabled)_
+- Circuit 24 Power (energy:  _[Device Name]_ Circuit 24  Energy)
+- Circuit 24 Voltage  _(disabled)_
+- Circuit 24 Current  _(disabled)_
+- Circuit 25 Power (energy:  _[Device Name]_ Circuit 25  Energy)
+- Circuit 25 Voltage  _(disabled)_
+- Circuit 25 Current  _(disabled)_
+- Circuit 26 Power (energy:  _[Device Name]_ Circuit 26  Energy)
+- Circuit 26 Voltage  _(disabled)_
+- Circuit 26 Current  _(disabled)_
+- Circuit 27 Power (energy:  _[Device Name]_ Circuit 27  Energy)
+- Circuit 27 Voltage  _(disabled)_
+- Circuit 27 Current  _(disabled)_
+- Circuit 28 Power (energy:  _[Device Name]_ Circuit 28  Energy)
+- Circuit 28 Voltage  _(disabled)_
+- Circuit 28 Current  _(disabled)_
+- Circuit 29 Power (energy:  _[Device Name]_ Circuit 29  Energy)
+- Circuit 29 Voltage  _(disabled)_
+- Circuit 29 Current  _(disabled)_
+- Circuit 30 Power (energy:  _[Device Name]_ Circuit 30  Energy)
+- Circuit 30 Voltage  _(disabled)_
+- Circuit 30 Current  _(disabled)_
+- Circuit 31 Power (energy:  _[Device Name]_ Circuit 31  Energy)
+- Circuit 31 Voltage  _(disabled)_
+- Circuit 31 Current  _(disabled)_
+- Circuit 32 Power (energy:  _[Device Name]_ Circuit 32  Energy)
+- Circuit 32 Voltage  _(disabled)_
+- Circuit 32 Current  _(disabled)_
+- Circuit 33 Power (energy:  _[Device Name]_ Circuit 33  Energy)
+- Circuit 33 Voltage  _(disabled)_
+- Circuit 33 Current  _(disabled)_
+- Circuit 34 Power (energy:  _[Device Name]_ Circuit 34  Energy)
+- Circuit 34 Voltage  _(disabled)_
+- Circuit 34 Current  _(disabled)_
+- Circuit 35 Power (energy:  _[Device Name]_ Circuit 35  Energy)
+- Circuit 35 Voltage  _(disabled)_
+- Circuit 35 Current  _(disabled)_
+- Circuit 36 Power (energy:  _[Device Name]_ Circuit 36  Energy)
+- Circuit 36 Voltage  _(disabled)_
+- Circuit 36 Current  _(disabled)_
+- Circuit 37 Power (energy:  _[Device Name]_ Circuit 37  Energy)
+- Circuit 37 Voltage  _(disabled)_
+- Circuit 37 Current  _(disabled)_
+- Circuit 38 Power (energy:  _[Device Name]_ Circuit 38  Energy)
+- Circuit 38 Voltage  _(disabled)_
+- Circuit 38 Current  _(disabled)_
+- Circuit 39 Power (energy:  _[Device Name]_ Circuit 39  Energy)
+- Circuit 39 Voltage  _(disabled)_
+- Circuit 39 Current  _(disabled)_
+- Circuit 40 Power (energy:  _[Device Name]_ Circuit 40  Energy)
+- Circuit 40 Voltage  _(disabled)_
+- Circuit 40 Current  _(disabled)_
+
+</p></details>
+
+<details><summary> OCEAN_PRO <i>(sensors: 11)</i> </summary>
+<p>
+
+*Sensors*
+- Inverter Output Power
+- Battery Power
+- Status
+- PV1 Power (energy:  _[Device Name]_ PV1  Energy)
+- PV2 Power (energy:  _[Device Name]_ PV2  Energy)
+- PV3 Power (energy:  _[Device Name]_ PV3  Energy)
+- PV4 Power (energy:  _[Device Name]_ PV4  Energy)
+- PV5 Power (energy:  _[Device Name]_ PV5  Energy)
+- PV6 Power (energy:  _[Device Name]_ PV6  Energy)
+- PV7 Power (energy:  _[Device Name]_ PV7  Energy)
+- PV8 Power (energy:  _[Device Name]_ PV8  Energy)
 
 </p></details>
 
@@ -641,19 +1198,19 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- AC Enabled 
-- DC (12V) Enabled 
-- X-Boost Enabled 
-- Auto Fan Speed 
+- Beeper
+- AC Enabled
+- DC (12V) Enabled
+- X-Boost Enabled
+- Auto Fan Speed
 
 *Sliders (numbers)*
-- Max Charge Level 
+- Max Charge Level
 
 *Selects*
-- Unit Timeout 
-- DC (12V) Timeout 
-- AC Timeout 
+- Unit Timeout
+- DC (12V) Timeout
+- AC Timeout
 
 </p></details>
 
@@ -710,21 +1267,21 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- AC Always On 
-- DC (12V) Enabled 
-- AC Enabled 
-- X-Boost Enabled 
-- AC Slow Charging 
-- Auto Fan Speed 
+- Beeper
+- AC Always On
+- DC (12V) Enabled
+- AC Enabled
+- X-Boost Enabled
+- AC Slow Charging
+- Auto Fan Speed
 
 *Sliders (numbers)*
-- Max Charge Level 
+- Max Charge Level
 
 *Selects*
-- Unit Timeout 
-- DC (12V) Timeout 
-- AC Timeout 
+- Unit Timeout
+- DC (12V) Timeout
+- AC Timeout
 
 </p></details>
 
@@ -751,11 +1308,11 @@ For information on how to add, remove, and configure devices, please refer to th
 - Cycles
 
 *Switches*
-- AC Enabled 
-- X-Boost Enabled 
+- AC Enabled
+- X-Boost Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
+- Max Charge Level
 
 </p></details>
 
@@ -804,21 +1361,21 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- DC (12V) Enabled 
-- AC Enabled 
-- X-Boost Enabled 
+- Beeper
+- DC (12V) Enabled
+- AC Enabled
+- X-Boost Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- AC Charging Power 
+- Max Charge Level
+- Min Discharge Level
+- AC Charging Power
 
 *Selects*
-- DC (12V) Charge Current 
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
+- DC (12V) Charge Current
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
 
 </p></details>
 
@@ -898,20 +1455,20 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- USB Enabled 
-- AC Always On 
-- Prio Solar Charging 
-- AC Enabled 
-- X-Boost Enabled 
-- DC (12V) Enabled 
+- Beeper
+- USB Enabled
+- AC Always On
+- Prio Solar Charging
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- Generator Auto Start Level 
-- Generator Auto Stop Level 
-- AC Charging Power 
+- Max Charge Level
+- Min Discharge Level
+- Generator Auto Start Level
+- Generator Auto Stop Level
+- AC Charging Power
 
 </p></details>
 
@@ -1001,30 +1558,30 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status (Scheduled)
 
 *Switches*
-- Beeper 
-- USB Enabled 
-- AC Always On 
-- AC Enabled 
-- X-Boost Enabled 
-- DC (12V) Enabled 
-- Backup Reserve Enabled 
+- Beeper
+- USB Enabled
+- AC Always On
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
+- Backup Reserve Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- Backup Reserve Level 
-- Generator Auto Start Level 
-- Generator Auto Stop Level 
-- AC Charging Power 
+- Max Charge Level
+- Min Discharge Level
+- Backup Reserve Level
+- Generator Auto Start Level
+- Generator Auto Stop Level
+- AC Charging Power
 
 *Selects*
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
 
 </p></details>
 
-<details><summary> POWERSTREAM <i>(sensors: 63, switches: 1, sliders: 2, selects: 1)</i> </summary>
+<details><summary> POWERSTREAM <i>(sensors: 63, switches: 1, sliders: 3, selects: 1)</i> </summary>
 <p>
 
 *Sensors*
@@ -1076,7 +1633,7 @@ For information on how to add, remove, and configure devices, please refer to th
 - Inverter Error Code  _(disabled)_
 - Inverter Warning Code  _(disabled)_
 - Inverter Status  _(disabled)_
-- Other Loads
+- Custom Load Power
 - Smart Plug Loads
 - Rated Power
 - Lower Battery Limit  _(disabled)_
@@ -1093,14 +1650,15 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Feed-in Control 
+- Feed-in Control
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
+- Max Charge Level
+- Min Discharge Level
+- Custom Load Power
 
 *Selects*
-- Power supply mode 
+- Power supply mode
 
 </p></details>
 
@@ -1145,18 +1703,97 @@ For information on how to add, remove, and configure devices, please refer to th
 - Ice Water Level OK
 
 *Switches*
-- Beeper 
-- Eco Mode 
-- Power 
+- Beeper
+- Eco Mode
+- Power
 
 *Sliders (numbers)*
-- Left Set Temperature 
-- Combined Set Temperature 
-- Right Set Temperature 
+- Left Set Temperature
+- Combined Set Temperature
+- Right Set Temperature
 
 </p></details>
 
-<details><summary> WAVE_2 <i>(sensors: 27, sliders: 1, selects: 4)</i> </summary>
+<details><summary> GLACIER_CLASSIC <i>(sensors: 50, binary_sensors: 3, switches: 5, sliders: 4, selects: 2)</i> </summary>
+<p>
+
+*Sensors*
+- Main Battery Level
+- Main Design Capacity  _(disabled)_
+- Main Full Capacity  _(disabled)_
+- Main Remain Capacity  _(disabled)_
+- Battery Level
+- Battery Charging State
+- Total In Power
+- Total Out Power
+- Charge Remaining Time
+- Discharge Remaining Time
+- Battery Remaining Time  _(disabled)_
+- Cycles
+- Battery Temperature
+- Min MOS Temperature  _(disabled)_
+- Max MOS Temperature  _(disabled)_
+- Left Temperature  _(disabled)_
+- Right Temperature  _(disabled)_
+- Combined Temperature  _(disabled)_
+- Battery Pack Temperature  _(disabled)_
+- Input Voltage  _(disabled)_
+- Battery Volts  _(disabled)_
+- Min Cell Volts  _(disabled)_
+- Max Cell Volts  _(disabled)_
+- Battery Current  _(disabled)_
+- Target Charge Current  _(disabled)_
+- Actual Battery SOC  _(disabled)_
+- Battery SOC Delta  _(disabled)_
+- Target Battery SOC  _(disabled)_
+- Screen Off Time
+- Device Standby Time  _(disabled)_
+- Runtime Full Upload Period  _(disabled)_
+- Runtime Incremental Upload Period  _(disabled)_
+- Display Full Upload Period  _(disabled)_
+- Display Incremental Upload Period  _(disabled)_
+- BMS Fault Code  _(disabled)_
+- BMS Error Code  _(disabled)_
+- PD Error Code  _(disabled)_
+- All Error Code  _(disabled)_
+- All BMS Fault  _(disabled)_
+- BQ System Status Register  _(disabled)_
+- BMS Serial  _(disabled)_
+- Main BMS Serial  _(disabled)_
+- BMS Hardware Version  _(disabled)_
+- BMS Warning State  _(disabled)_
+- Open BMS Index  _(disabled)_
+- Max Available Modules  _(disabled)_
+- Temperature Unit  _(disabled)_
+- Temperature Unit Raw  _(disabled)_
+- Status
+- Protobuf Debug  _(disabled)_
+
+*Binary sensors*
+- Dual Zone Mode
+- Lid Status
+- External Supply Connected
+
+*Switches*
+- Beeper
+- Eco Mode
+- Child Lock
+- Simple Mode
+- Temperature Alert
+
+*Sliders (numbers)*
+- Left Set Temperature
+- Right Set Temperature
+- Max Charge Level
+- Min Discharge Level
+
+*Selects*
+- Battery Protection
+- Device Standby Time
+
+</p></details>
+
+<details><summary> WAVE_2 <i>(sensors: 27, sliders: 1, selects: 5)</i> </summary>
 <p>
 
 *Sensors*
@@ -1189,13 +1826,50 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Sliders (numbers)*
-- Set Temperature 
+- Set Temperature
 
 *Selects*
-- Wind speed 
-- Main mode 
-- Remote startup/shutdown 
-- Sub-mode 
+- Wind speed
+- Main mode
+- Remote startup/shutdown
+- Sub-mode
+- Temperature unit
+
+</p></details>
+
+<details><summary> WAVE_3 <i>(sensors: 17, switches: 2, sliders: 1, selects: 3)</i> </summary>
+<p>
+
+*Sensors*
+- Total In Power
+- Total Out Power
+- AC Out Power
+- AC In Power
+- DC Battery Power
+- Solar In Power
+- Self Consumption Power  _(disabled)_
+- Main Battery Level
+- Water Level
+- Discharge Remaining Time
+- Charge Remaining Time
+- Power Off Delay Remaining
+- Ambient Temperature
+- Indoor Supply Air Temp  _(disabled)_
+- Condenser Temp  _(disabled)_
+- Evaporator Temp  _(disabled)_
+- BMS Error Code  _(disabled)_
+
+*Switches*
+- Beeper
+- Auto Drain
+
+*Sliders (numbers)*
+- Screen Brightness
+
+*Selects*
+- Screen Timeout
+- Unit Timeout
+- Auto-Off Timeout
 
 </p></details>
 
@@ -1224,7 +1898,26 @@ For information on how to add, remove, and configure devices, please refer to th
 
 </p></details>
 
-<details><summary> STREAM_AC <i>(sensors: 39)</i> </summary>
+<details><summary> SMART_PLUG <i>(sensors: 5, switches: 1, sliders: 2)</i> </summary>
+<p>
+
+*Sensors*
+- Temperature
+- Volts
+- Current
+- Power
+- Status
+
+*Switches*
+- On
+
+*Sliders (numbers)*
+- Brightness
+- Max Power
+
+</p></details>
+
+<details><summary> STREAM_AC <i>(sensors: 42)</i> </summary>
 <p>
 
 *Sensors*
@@ -1233,10 +1926,13 @@ For information on how to add, remove, and configure devices, please refer to th
 - Cumulative Capacity Discharge (mAh)  _(disabled)_
 - Cumulative Energy Discharge (Wh)  _(disabled)_
 - Charge Remaining Time  _(disabled)_
-- Discharge Remaining Time  _(disabled)_
+- Discharge Remaining Time
+- Stored Energy  _(auto)_
+- Max Charge Level
+- Min Discharge Level
 - Cycles  _(disabled)_
 - Design Capacity  _(disabled)_
-- Power Battery SOC  _(disabled)_
+- Power Battery SOC
 - Full Capacity  _(disabled)_
 - Power AC
 - Power Volts  _(disabled)_
@@ -1262,7 +1958,7 @@ For information on how to add, remove, and configure devices, please refer to th
 - Real State of Health  _(disabled)_
 - Remain Capacity  _(disabled)_
 - Remaining Time  _(disabled)_
-- Power Battery  _(disabled)_
+- Battery Level
 - State of Health  _(disabled)_
 - Power AC SYS  _(disabled)_
 - Battery Temperature  _(disabled)_
@@ -1270,7 +1966,7 @@ For information on how to add, remove, and configure devices, please refer to th
 
 </p></details>
 
-<details><summary> STREAM_PRO <i>(sensors: 39)</i> </summary>
+<details><summary> STREAM_PRO <i>(sensors: 42)</i> </summary>
 <p>
 
 *Sensors*
@@ -1279,10 +1975,13 @@ For information on how to add, remove, and configure devices, please refer to th
 - Cumulative Capacity Discharge (mAh)  _(disabled)_
 - Cumulative Energy Discharge (Wh)  _(disabled)_
 - Charge Remaining Time  _(disabled)_
-- Discharge Remaining Time  _(disabled)_
+- Discharge Remaining Time
+- Stored Energy  _(auto)_
+- Max Charge Level
+- Min Discharge Level
 - Cycles  _(disabled)_
 - Design Capacity  _(disabled)_
-- Power Battery SOC  _(disabled)_
+- Power Battery SOC
 - Full Capacity  _(disabled)_
 - Power AC
 - Power Volts  _(disabled)_
@@ -1308,7 +2007,7 @@ For information on how to add, remove, and configure devices, please refer to th
 - Real State of Health  _(disabled)_
 - Remain Capacity  _(disabled)_
 - Remaining Time  _(disabled)_
-- Power Battery  _(disabled)_
+- Battery Level
 - State of Health  _(disabled)_
 - Power AC SYS  _(disabled)_
 - Battery Temperature  _(disabled)_
@@ -1316,7 +2015,7 @@ For information on how to add, remove, and configure devices, please refer to th
 
 </p></details>
 
-<details><summary> STREAM_ULTRA <i>(sensors: 39)</i> </summary>
+<details><summary> STREAM_ULTRA <i>(sensors: 42)</i> </summary>
 <p>
 
 *Sensors*
@@ -1325,10 +2024,13 @@ For information on how to add, remove, and configure devices, please refer to th
 - Cumulative Capacity Discharge (mAh)  _(disabled)_
 - Cumulative Energy Discharge (Wh)  _(disabled)_
 - Charge Remaining Time  _(disabled)_
-- Discharge Remaining Time  _(disabled)_
+- Discharge Remaining Time
+- Stored Energy  _(auto)_
+- Max Charge Level
+- Min Discharge Level
 - Cycles  _(disabled)_
 - Design Capacity  _(disabled)_
-- Power Battery SOC  _(disabled)_
+- Power Battery SOC
 - Full Capacity  _(disabled)_
 - Power AC
 - Power Volts  _(disabled)_
@@ -1354,11 +2056,84 @@ For information on how to add, remove, and configure devices, please refer to th
 - Real State of Health  _(disabled)_
 - Remain Capacity  _(disabled)_
 - Remaining Time  _(disabled)_
-- Power Battery  _(disabled)_
+- Battery Level
 - State of Health  _(disabled)_
 - Power AC SYS  _(disabled)_
 - Battery Temperature  _(disabled)_
 - Battery Volts  _(disabled)_
+
+</p></details>
+
+<details><summary> STREAM_ULTRA_X <i>(sensors: 42)</i> </summary>
+<p>
+
+*Sensors*
+- Cumulative Capacity Charge (mAh)  _(disabled)_
+- Cumulative Energy Charge (Wh)  _(disabled)_
+- Cumulative Capacity Discharge (mAh)  _(disabled)_
+- Cumulative Energy Discharge (Wh)  _(disabled)_
+- Charge Remaining Time  _(disabled)_
+- Discharge Remaining Time
+- Stored Energy  _(auto)_
+- Max Charge Level
+- Min Discharge Level
+- Cycles  _(disabled)_
+- Design Capacity  _(disabled)_
+- Power Battery SOC
+- Full Capacity  _(disabled)_
+- Power AC
+- Power Volts  _(disabled)_
+- In Power  _(disabled)_
+- Max Cell Temperature  _(disabled)_
+- Max Cell Volts  _(disabled)_
+- Min Cell Temperature  _(disabled)_
+- Min Cell Volts  _(disabled)_
+- Out Power  _(disabled)_
+- Power Battery
+- Power PV 1  _(auto)_
+- Power PV 2  _(auto)_
+- Power PV 3  _(auto)_
+- Power PV 4  _(auto)_
+- Power PV Sum
+- Power SCHUKO1  _(auto)_
+- Power SCHUKO2  _(auto)_
+- Power Grid
+- Power Sys Load
+- Power Sys Load From Battery
+- Power Sys Load From Grid
+- Power Sys Load From PV
+- Real State of Health  _(disabled)_
+- Remain Capacity  _(disabled)_
+- Remaining Time  _(disabled)_
+- Battery Level
+- State of Health  _(disabled)_
+- Power AC SYS  _(disabled)_
+- Battery Temperature  _(disabled)_
+- Battery Volts  _(disabled)_
+
+</p></details>
+
+<details><summary> STREAM_MICROINVERTER <i>(sensors: 17)</i> </summary>
+<p>
+
+*Sensors*
+- Power AC
+- Power Volts  _(disabled)_
+- Power In Amps  _(disabled)_
+- Grid Frequency
+- Grid Connection Status
+- Power PV 1  _(auto)_
+- Power PV 2  _(auto)_
+- Power PV 1  _(auto)_
+- Power PV 2  _(auto)_
+- Power PV1 Volts  _(auto)_
+- Power PV2 Volts  _(auto)_
+- Power PV1 In Amps  _(auto)_
+- Power PV2 In Amps  _(auto)_
+- WiFi Signal Strength
+- Feed-in Power Limit
+- Feed-in Power Max
+- Status (Scheduled)
 
 </p></details>
 
@@ -1439,20 +2214,20 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- USB Enabled 
-- AC Always On 
-- Prio Solar Charging 
-- AC Enabled 
-- X-Boost Enabled 
-- DC (12V) Enabled 
+- Beeper
+- USB Enabled
+- AC Always On
+- Prio Solar Charging
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- Generator Auto Start Level 
-- Generator Auto Stop Level 
-- AC Charging Power 
+- Max Charge Level
+- Min Discharge Level
+- Generator Auto Start Level
+- Generator Auto Stop Level
+- AC Charging Power
 
 </p></details>
 
@@ -1533,26 +2308,26 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- DC (12V) Enabled 
-- AC Enabled 
-- X-Boost Enabled 
-- AC Always On 
-- Backup Reserve Enabled 
+- Beeper
+- DC (12V) Enabled
+- AC Enabled
+- X-Boost Enabled
+- AC Always On
+- Backup Reserve Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- Backup Reserve Level 
-- Generator Auto Start Level 
-- Generator Auto Stop Level 
-- AC Charging Power 
+- Max Charge Level
+- Min Discharge Level
+- Backup Reserve Level
+- Generator Auto Start Level
+- Generator Auto Stop Level
+- AC Charging Power
 
 *Selects*
-- DC (12V) Charge Current 
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
+- DC (12V) Charge Current
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
 
 </p></details>
 
@@ -1620,15 +2395,15 @@ For information on how to add, remove, and configure devices, please refer to th
 - DC Anderson Out Power (energy:  _[Device Name]_ DC Anderson Out  Energy)
 
 *Switches*
-- Wireless 4G Enabled 
-- Battery Auto-Heating Enabled 
-- DC Mode 
+- Wireless 4G Enabled
+- Battery Auto-Heating Enabled
+- DC Mode
 
 *Sliders (numbers)*
-- Min Discharge Level 
-- Max Charge Level 
-- AC Charging Power 
-- Power I/O Port Charging Power 
+- Min Discharge Level
+- Max Charge Level
+- AC Charging Power
+- Power I/O Port Charging Power
 
 </p></details>
 
@@ -1685,29 +2460,29 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- USB Enabled 
-- AC Always On 
-- Prio Solar Charging 
-- AC Enabled 
-- X-Boost Enabled 
-- DC (12V) Enabled 
-- Backup Reserve Enabled 
+- Beeper
+- USB Enabled
+- AC Always On
+- Prio Solar Charging
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
+- Backup Reserve Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- Backup Reserve Level 
-- Generator Auto Start Level 
-- Generator Auto Stop Level 
-- AC Charging Power 
+- Max Charge Level
+- Min Discharge Level
+- Backup Reserve Level
+- Generator Auto Start Level
+- Generator Auto Stop Level
+- AC Charging Power
 
 *Selects*
-- DC (12V) Charge Current 
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
-- DC (12V) Timeout 
+- DC (12V) Charge Current
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
+- DC (12V) Timeout
 
 </p></details>
 
@@ -1797,30 +2572,30 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status (Scheduled)
 
 *Switches*
-- Beeper 
-- USB Enabled 
-- AC Always On 
-- AC Enabled 
-- X-Boost Enabled 
-- DC (12V) Enabled 
-- Backup Reserve Enabled 
+- Beeper
+- USB Enabled
+- AC Always On
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
+- Backup Reserve Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- Backup Reserve Level 
-- Generator Auto Start Level 
-- Generator Auto Stop Level 
-- AC Charging Power 
+- Max Charge Level
+- Min Discharge Level
+- Backup Reserve Level
+- Generator Auto Start Level
+- Generator Auto Stop Level
+- AC Charging Power
 
 *Selects*
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
 
 </p></details>
 
-<details><summary> RIVER 2 Pro (API) <i>(sensors: 30, switches: 4, sliders: 4, selects: 5)</i> </summary>
+<details><summary> RIVER 2 Pro (API) <i>(sensors: 34, switches: 4, sliders: 4, selects: 5)</i> </summary>
 <p>
 
 *Sensors*
@@ -1838,10 +2613,14 @@ For information on how to add, remove, and configure devices, please refer to th
 - AC In Volts
 - AC Out Volts
 - Type-C In Power
+- Solar In Current
+- Solar In Voltage
 - Solar In Power (energy:  _[Device Name]_ Solar In  Energy)
 - DC Out Power
 - Type-C Out Power
 - USB Out Power
+- DC Mode
+- MPPT Fault
 - Charge Remaining Time
 - Discharge Remaining Time
 - Remaining Time
@@ -1856,23 +2635,23 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- AC Enabled 
-- X-Boost Enabled 
-- DC (12V) Enabled 
-- Backup Reserve Enabled 
+- AC Enabled
+- X-Boost Enabled
+- DC (12V) Enabled
+- Backup Reserve Enabled
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- AC Charging Power 
-- Backup Reserve Level 
+- Max Charge Level
+- Min Discharge Level
+- AC Charging Power
+- Backup Reserve Level
 
 *Selects*
-- DC (12V) Charge Current 
-- DC Mode 
-- Screen Timeout 
-- Unit Timeout 
-- AC Timeout 
+- DC (12V) Charge Current
+- DC Mode
+- Screen Timeout
+- Unit Timeout
+- AC Timeout
 
 </p></details>
 
@@ -1886,10 +2665,10 @@ For information on how to add, remove, and configure devices, please refer to th
 - Power
 
 *Switches*
-- On 
+- On
 
 *Sliders (numbers)*
-- Brightness 
+- Brightness
 
 </p></details>
 
@@ -1945,7 +2724,7 @@ For information on how to add, remove, and configure devices, please refer to th
 - Inverter Error Code  _(disabled)_
 - Inverter Warning Code  _(disabled)_
 - Inverter Status  _(disabled)_
-- Other Loads
+- Custom Load Power
 - Smart Plug Loads
 - Rated Power
 - Lower Battery Limit  _(disabled)_
@@ -1957,17 +2736,17 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Sliders (numbers)*
-- Min Discharge Level 
-- Max Charge Level 
-- Brightness 
-- Custom load power settings 
+- Min Discharge Level
+- Max Charge Level
+- Brightness
+- Custom Load Power
 
 *Selects*
-- Power supply mode 
+- Power supply mode
 
 </p></details>
 
-<details><summary> WAVE 2 (API) <i>(sensors: 27, sliders: 1, selects: 4)</i> </summary>
+<details><summary> WAVE 2 (API) <i>(sensors: 27, sliders: 1, selects: 5)</i> </summary>
 <p>
 
 *Sensors*
@@ -2000,13 +2779,14 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Sliders (numbers)*
-- Set Temperature 
+- Set Temperature
 
 *Selects*
-- Wind speed 
-- Main mode 
-- Remote startup/shutdown 
-- Sub-mode 
+- Wind speed
+- Main mode
+- Remote startup/shutdown
+- Sub-mode
+- Temperature unit
 
 </p></details>
 
@@ -2047,29 +2827,66 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 *Switches*
-- Beeper 
-- AC HV Output Enabled 
-- AC LV Output Enabled 
-- 12V DC Output Enabled 
-- 24V DC Output Enabled 
-- X-Boost Enabled 
-- AC Energy Saving Enabled 
-- Smart Generator Auto Start/Stop 
+- Beeper
+- AC HV Output Enabled
+- AC LV Output Enabled
+- 12V DC Output Enabled
+- 24V DC Output Enabled
+- X-Boost Enabled
+- AC Energy Saving Enabled
+- Smart Generator Auto Start/Stop
 
 *Sliders (numbers)*
-- Max Charge Level 
-- Min Discharge Level 
-- Smart Generator Start SOC 
-- Smart Generator Stop SOC 
-- AC Charging Power 
+- Max Charge Level
+- Min Discharge Level
+- Smart Generator Start SOC
+- Smart Generator Stop SOC
+- AC Charging Power
 
 *Selects*
-- Screen Timeout 
-- AC Timeout 
-- DC Timeout 
-- Bluetooth Timeout 
-- Device Timeout 
-- AC Output Type 
+- Screen Timeout
+- AC Timeout
+- DC Timeout
+- Bluetooth Timeout
+- Device Timeout
+- AC Output Type
+
+</p></details>
+
+<details><summary> DELTA 3 Max Plus (API) <i>(sensors: 16, switches: 7, sliders: 3)</i> </summary>
+<p>
+
+*Sensors*
+- Main Battery Level
+- Battery Charging State
+- Total In Power (energy:  _[Device Name]_ Total In  Energy)
+- Total Out Power (energy:  _[Device Name]_ Total Out  Energy)
+- AC In Power
+- Solar In Power
+- Solar 2 In Power
+- DC Out Power
+- Type-C (1) Out Power
+- Type-C (2) Out Power
+- Type-C (3) Out Power
+- USB QC (1) Out Power
+- USB QC (2) Out Power
+- Charge Remaining Time
+- Discharge Remaining Time
+- Status (Scheduled)
+
+*Switches*
+- AC Output
+- AC2 Output
+- DC Output
+- X-Boost Enabled
+- Beeper
+- Backup Reserve Enabled
+- Bypass Output Disabled
+
+*Sliders (numbers)*
+- Max Charge Level
+- Min Discharge Level
+- Backup Reserve Level
 
 </p></details>
 
@@ -2113,7 +2930,7 @@ For information on how to add, remove, and configure devices, please refer to th
 - Alt. Voltage Limit En
 
 *Switches*
-- Main DC Output 
+- Main DC Output
 
 ### bbcout
 
@@ -2148,11 +2965,11 @@ For information on how to add, remove, and configure devices, please refer to th
 - Fan Level  _(disabled)_
 
 *Switches*
-- AC Output 
-- AC Charging 
+- AC Output
+- AC Charging
 
 *Sliders (numbers)*
-- AC Charging Power 
+- AC Charging Power
 
 ### bpxxx
 
@@ -2237,12 +3054,12 @@ For information on how to add, remove, and configure devices, please refer to th
 - DC Out Voltage
 
 *Switches*
-- DC Switch 1 
-- DC Switch 2 
-- DC Switch 3 
-- DC Switch 4 
-- DC Switch 5 
-- DC Switch 6 
+- DC Switch 1
+- DC Switch 2
+- DC Switch 3
+- DC Switch 4
+- DC Switch 5
+- DC Switch 6
 
 ### ichigh
 
@@ -2266,7 +3083,7 @@ For information on how to add, remove, and configure devices, please refer to th
 - AC Output Day Power  _(disabled)_
 
 *Switches*
-- Prioretize grid 
+- Prioretize grid
 
 ### ldac
 
@@ -2329,7 +3146,7 @@ For information on how to add, remove, and configure devices, please refer to th
 
 </p></details>
 
-<details><summary> Stream AC (API) <i>(sensors: 41, switches: 5, sliders: 1)</i> </summary>
+<details><summary> Stream AC (API) <i>(sensors: 55, switches: 5, sliders: 1)</i> </summary>
 <p>
 
 *Sensors*
@@ -2339,6 +3156,8 @@ For information on how to add, remove, and configure devices, please refer to th
 - Cumulative Energy Discharge (Wh)
 - Charge Remaining Time  _(disabled)_
 - Discharge Remaining Time  _(disabled)_
+- Battery Level  _(auto)_
+- Stored Energy
 - Max Charge Level
 - Min Discharge Level
 - Cycles
@@ -2358,6 +3177,18 @@ For information on how to add, remove, and configure devices, please refer to th
 - Power PV 2  _(auto)_
 - Power PV 3  _(auto)_
 - Power PV 4  _(auto)_
+- Power PV 1  _(auto)_
+- Power PV 2  _(auto)_
+- Power PV 3  _(auto)_
+- Power PV 4  _(auto)_
+- Power PV1 Volts  _(auto)_
+- Power PV2 Volts  _(auto)_
+- Power PV3 Volts  _(auto)_
+- Power PV4 Volts  _(auto)_
+- Power PV1 In Amps  _(auto)_
+- Power PV2 In Amps  _(auto)_
+- Power PV3 In Amps  _(auto)_
+- Power PV4 In Amps  _(auto)_
 - Power PV Sum
 - Power SCHUKO1  _(auto)_
 - Power SCHUKO2  _(auto)_
@@ -2376,18 +3207,18 @@ For information on how to add, remove, and configure devices, please refer to th
 - Battery Volts  _(disabled)_
 
 *Switches*
-- AC 1 On 
-- AC 2 On 
-- Operating mode - Self-powered 
-- Operating mode - AI Mode 
-- Feed-in control 
+- AC 1 On
+- AC 2 On
+- Operating mode - Self-powered
+- Operating mode - AI Mode
+- Feed-in control
 
 *Sliders (numbers)*
-- Backup Reserve Level 
+- Backup Reserve Level
 
 </p></details>
 
-<details><summary> Stream PRO (API) <i>(sensors: 41, switches: 5, sliders: 1)</i> </summary>
+<details><summary> Stream PRO (API) <i>(sensors: 55, switches: 5, sliders: 1)</i> </summary>
 <p>
 
 *Sensors*
@@ -2397,6 +3228,8 @@ For information on how to add, remove, and configure devices, please refer to th
 - Cumulative Energy Discharge (Wh)
 - Charge Remaining Time  _(disabled)_
 - Discharge Remaining Time  _(disabled)_
+- Battery Level  _(auto)_
+- Stored Energy
 - Max Charge Level
 - Min Discharge Level
 - Cycles
@@ -2416,6 +3249,18 @@ For information on how to add, remove, and configure devices, please refer to th
 - Power PV 2  _(auto)_
 - Power PV 3  _(auto)_
 - Power PV 4  _(auto)_
+- Power PV 1  _(auto)_
+- Power PV 2  _(auto)_
+- Power PV 3  _(auto)_
+- Power PV 4  _(auto)_
+- Power PV1 Volts  _(auto)_
+- Power PV2 Volts  _(auto)_
+- Power PV3 Volts  _(auto)_
+- Power PV4 Volts  _(auto)_
+- Power PV1 In Amps  _(auto)_
+- Power PV2 In Amps  _(auto)_
+- Power PV3 In Amps  _(auto)_
+- Power PV4 In Amps  _(auto)_
 - Power PV Sum
 - Power SCHUKO1  _(auto)_
 - Power SCHUKO2  _(auto)_
@@ -2434,18 +3279,18 @@ For information on how to add, remove, and configure devices, please refer to th
 - Battery Volts  _(disabled)_
 
 *Switches*
-- AC 1 On 
-- AC 2 On 
-- Operating mode - Self-powered 
-- Operating mode - AI Mode 
-- Feed-in control 
+- AC 1 On
+- AC 2 On
+- Operating mode - Self-powered
+- Operating mode - AI Mode
+- Feed-in control
 
 *Sliders (numbers)*
-- Backup Reserve Level 
+- Backup Reserve Level
 
 </p></details>
 
-<details><summary> Stream Ultra (API) <i>(sensors: 41, switches: 5, sliders: 1)</i> </summary>
+<details><summary> Stream Ultra (API) <i>(sensors: 55, switches: 5, sliders: 1)</i> </summary>
 <p>
 
 *Sensors*
@@ -2455,6 +3300,8 @@ For information on how to add, remove, and configure devices, please refer to th
 - Cumulative Energy Discharge (Wh)
 - Charge Remaining Time  _(disabled)_
 - Discharge Remaining Time  _(disabled)_
+- Battery Level  _(auto)_
+- Stored Energy
 - Max Charge Level
 - Min Discharge Level
 - Cycles
@@ -2474,6 +3321,18 @@ For information on how to add, remove, and configure devices, please refer to th
 - Power PV 2  _(auto)_
 - Power PV 3  _(auto)_
 - Power PV 4  _(auto)_
+- Power PV 1  _(auto)_
+- Power PV 2  _(auto)_
+- Power PV 3  _(auto)_
+- Power PV 4  _(auto)_
+- Power PV1 Volts  _(auto)_
+- Power PV2 Volts  _(auto)_
+- Power PV3 Volts  _(auto)_
+- Power PV4 Volts  _(auto)_
+- Power PV1 In Amps  _(auto)_
+- Power PV2 In Amps  _(auto)_
+- Power PV3 In Amps  _(auto)_
+- Power PV4 In Amps  _(auto)_
 - Power PV Sum
 - Power SCHUKO1  _(auto)_
 - Power SCHUKO2  _(auto)_
@@ -2492,22 +3351,96 @@ For information on how to add, remove, and configure devices, please refer to th
 - Battery Volts  _(disabled)_
 
 *Switches*
-- AC 1 On 
-- AC 2 On 
-- Operating mode - Self-powered 
-- Operating mode - AI Mode 
-- Feed-in control 
+- AC 1 On
+- AC 2 On
+- Operating mode - Self-powered
+- Operating mode - AI Mode
+- Feed-in control
 
 *Sliders (numbers)*
-- Backup Reserve Level 
+- Backup Reserve Level
 
 </p></details>
 
-<details><summary> Stream Microinverter (API) <i>(sensors: 12)</i> </summary>
+<details><summary> Stream Ultra X (API) <i>(sensors: 55, switches: 5, sliders: 1)</i> </summary>
+<p>
+
+*Sensors*
+- Cumulative Capacity Charge (mAh)  _(disabled)_
+- Cumulative Energy Charge (Wh)
+- Cumulative Capacity Discharge (mAh)  _(disabled)_
+- Cumulative Energy Discharge (Wh)
+- Charge Remaining Time  _(disabled)_
+- Discharge Remaining Time  _(disabled)_
+- Battery Level  _(auto)_
+- Stored Energy
+- Max Charge Level
+- Min Discharge Level
+- Cycles
+- Design Capacity  _(disabled)_
+- Power Battery SOC
+- Full Capacity  _(disabled)_
+- Power AC
+- Power Volts  _(disabled)_
+- In Power
+- Max Cell Temperature  _(disabled)_
+- Max Cell Volts  _(disabled)_
+- Min Cell Temperature  _(disabled)_
+- Min Cell Volts  _(disabled)_
+- Out Power
+- Power Battery
+- Power PV 1  _(auto)_
+- Power PV 2  _(auto)_
+- Power PV 3  _(auto)_
+- Power PV 4  _(auto)_
+- Power PV 1  _(auto)_
+- Power PV 2  _(auto)_
+- Power PV 3  _(auto)_
+- Power PV 4  _(auto)_
+- Power PV1 Volts  _(auto)_
+- Power PV2 Volts  _(auto)_
+- Power PV3 Volts  _(auto)_
+- Power PV4 Volts  _(auto)_
+- Power PV1 In Amps  _(auto)_
+- Power PV2 In Amps  _(auto)_
+- Power PV3 In Amps  _(auto)_
+- Power PV4 In Amps  _(auto)_
+- Power PV Sum
+- Power SCHUKO1  _(auto)_
+- Power SCHUKO2  _(auto)_
+- Power Grid
+- Power Sys Load
+- Power Sys Load From Battery
+- Power Sys Load From Grid
+- Power Sys Load From PV
+- Real State of Health  _(disabled)_
+- Remain Capacity  _(disabled)_
+- Remaining Time
+- Power Battery
+- State of Health
+- Power AC SYS
+- Battery Temperature
+- Battery Volts  _(disabled)_
+
+*Switches*
+- AC 1 On
+- AC 2 On
+- Operating mode - Self-powered
+- Operating mode - AI Mode
+- Feed-in control
+
+*Sliders (numbers)*
+- Backup Reserve Level
+
+</p></details>
+
+<details><summary> Stream Microinverter (API) <i>(sensors: 14)</i> </summary>
 <p>
 
 *Sensors*
 - Power AC
+- Power PV 1  _(auto)_
+- Power PV 2  _(auto)_
 - Power PV 1  _(auto)_
 - Power PV 2  _(auto)_
 - Power Volts  _(disabled)_
@@ -2522,7 +3455,7 @@ For information on how to add, remove, and configure devices, please refer to th
 
 </p></details>
 
-<details><summary> Smart Home Panel (API) <i>(sensors: 30, binary_sensors: 1, switches: 3, sliders: 2)</i> </summary>
+<details><summary> Smart Home Panel (API) <i>(sensors: 67, binary_sensors: 1, switches: 4, sliders: 4, selects: 11)</i> </summary>
 <p>
 
 *Sensors*
@@ -2556,18 +3489,71 @@ For information on how to add, remove, and configure devices, please refer to th
 - Circuit 8 Current  _(disabled)_
 - Circuit 9 Current  _(disabled)_
 - Circuit 10 Current  _(disabled)_
+- Breaker 1 Power (energy:  _[Device Name]_ Breaker 1  Energy)
+- Breaker 2 Power (energy:  _[Device Name]_ Breaker 2  Energy)
+- Breaker 3 Power (energy:  _[Device Name]_ Breaker 3  Energy)
+- Breaker 4 Power (energy:  _[Device Name]_ Breaker 4  Energy)
+- Breaker 5 Power (energy:  _[Device Name]_ Breaker 5  Energy)
+- Breaker 6 Power (energy:  _[Device Name]_ Breaker 6  Energy)
+- Breaker 7 Power (energy:  _[Device Name]_ Breaker 7  Energy)
+- Breaker 8 Power (energy:  _[Device Name]_ Breaker 8  Energy)
+- Breaker 9 Power (energy:  _[Device Name]_ Breaker 9  Energy)
+- Breaker 10 Power (energy:  _[Device Name]_ Breaker 10  Energy)
+- Breaker 1 Battery Power (energy:  _[Device Name]_ Breaker 1 Battery  Energy)
+- Breaker 1 Grid Power (energy:  _[Device Name]_ Breaker 1 Grid  Energy)
+- Breaker 2 Battery Power (energy:  _[Device Name]_ Breaker 2 Battery  Energy)
+- Breaker 2 Grid Power (energy:  _[Device Name]_ Breaker 2 Grid  Energy)
+- Breaker 3 Battery Power (energy:  _[Device Name]_ Breaker 3 Battery  Energy)
+- Breaker 3 Grid Power (energy:  _[Device Name]_ Breaker 3 Grid  Energy)
+- Breaker 4 Battery Power (energy:  _[Device Name]_ Breaker 4 Battery  Energy)
+- Breaker 4 Grid Power (energy:  _[Device Name]_ Breaker 4 Grid  Energy)
+- Breaker 5 Battery Power (energy:  _[Device Name]_ Breaker 5 Battery  Energy)
+- Breaker 5 Grid Power (energy:  _[Device Name]_ Breaker 5 Grid  Energy)
+- Breaker 6 Battery Power (energy:  _[Device Name]_ Breaker 6 Battery  Energy)
+- Breaker 6 Grid Power (energy:  _[Device Name]_ Breaker 6 Grid  Energy)
+- Breaker 7 Battery Power (energy:  _[Device Name]_ Breaker 7 Battery  Energy)
+- Breaker 7 Grid Power (energy:  _[Device Name]_ Breaker 7 Grid  Energy)
+- Breaker 8 Battery Power (energy:  _[Device Name]_ Breaker 8 Battery  Energy)
+- Breaker 8 Grid Power (energy:  _[Device Name]_ Breaker 8 Grid  Energy)
+- Breaker 9 Battery Power (energy:  _[Device Name]_ Breaker 9 Battery  Energy)
+- Breaker 9 Grid Power (energy:  _[Device Name]_ Breaker 9 Grid  Energy)
+- Breaker 10 Battery Power (energy:  _[Device Name]_ Breaker 10 Battery  Energy)
+- Breaker 10 Grid Power (energy:  _[Device Name]_ Breaker 10 Grid  Energy)
+- Battery 1 Power (energy:  _[Device Name]_ Battery 1  Energy)
+- Battery 2 Power (energy:  _[Device Name]_ Battery 2  Energy)
+- Circuits Combined Power (energy:  _[Device Name]_ Circuits Combined  Energy)
+- Circuits Battery Demand Power (energy:  _[Device Name]_ Circuits Battery Demand  Energy)
+- Circuits Grid Demand Power (energy:  _[Device Name]_ Circuits Grid Demand  Energy)
+- Battery Combined Power (energy:  _[Device Name]_ Battery Combined  Energy)
+- Status
 
 *Binary sensors*
 - Power Grid
 
 *Switches*
-- EPS Mode 
-- Battery 1 Charge 
-- Battery 2 Charge 
+- EPS Mode
+- Scheduled Charge
+- Battery 1 Charge
+- Battery 2 Charge
 
 *Sliders (numbers)*
-- Min Discharge Level 
-- Max Charge Level 
+- Min Discharge Level
+- Max Charge Level
+- Scheduled Charge Battery Level
+- Scheduled Charge Power
+
+*Selects*
+- Circuit 1 Mode _(read-only)_
+- Circuit 2 Mode _(read-only)_
+- Circuit 3 Mode _(read-only)_
+- Circuit 4 Mode _(read-only)_
+- Circuit 5 Mode _(read-only)_
+- Circuit 6 Mode _(read-only)_
+- Circuit 7 Mode _(read-only)_
+- Circuit 8 Mode _(read-only)_
+- Circuit 9 Mode _(read-only)_
+- Circuit 10 Mode _(read-only)_
+- Scheduled Charge Battery
 
 </p></details>
 
@@ -2609,41 +3595,41 @@ For information on how to add, remove, and configure devices, please refer to th
 - In Storm Mode
 
 *Switches*
-- EPS Mode 
-- Storm Guard 
-- Battery 1 
-- Battery 2 
-- Battery 3 
-- Battery 1 Force Charge 
-- Battery 2 Force Charge 
-- Battery 3 Force Charge 
-- Breaker 1 
-- Breaker 2 
-- Breaker 3 
-- Breaker 4 
-- Breaker 5 
-- Breaker 6 
-- Breaker 7 
-- Breaker 8 
-- Breaker 9 
-- Breaker 10 
-- Breaker 11 
-- Breaker 12 
+- EPS Mode
+- Storm Guard
+- Battery 1
+- Battery 2
+- Battery 3
+- Battery 1 Force Charge
+- Battery 2 Force Charge
+- Battery 3 Force Charge
+- Breaker 1
+- Breaker 2
+- Breaker 3
+- Breaker 4
+- Breaker 5
+- Breaker 6
+- Breaker 7
+- Breaker 8
+- Breaker 9
+- Breaker 10
+- Breaker 11
+- Breaker 12
 
 *Sliders (numbers)*
-- Backup Reserve Level 
-- AC Charging Power 
-- Max Charge Level 
-- Generator Battery Charging Power 
-- Generator Max Output Power 
+- Backup Reserve Level
+- AC Charging Power
+- Max Charge Level
+- Generator Battery Charging Power
+- Generator Max Output Power
 
 *Selects*
-- Operating Mode 
-- Generator Type 
+- Operating Mode
+- Generator Type
 
 </p></details>
 
-<details><summary> Power Ocean (API) <i>(sensors: 23)</i> </summary>
+<details><summary> Power Ocean (API) <i>(sensors: 26)</i> </summary>
 <p>
 
 *Sensors*
@@ -2663,6 +3649,9 @@ For information on how to add, remove, and configure devices, please refer to th
 - pcsCPhase.actPwr
 - pcsCPhase.reactPwr
 - pcsCPhase.apparentPwr
+- sysGridPwr
+- sysLoadPwr
+- bpPwr
 - mpptPv1.pwr
 - mpptPv1.amp
 - mpptPv1.vol
@@ -2672,3 +3661,4 @@ For information on how to add, remove, and configure devices, please refer to th
 - Status
 
 </p></details>
+

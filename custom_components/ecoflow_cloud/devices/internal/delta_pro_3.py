@@ -26,9 +26,10 @@ from custom_components.ecoflow_cloud.sensor import (
     CyclesSensorEntity,
     InEnergySensorEntity,
     InMilliampSolarSensorEntity,
-    InVoltSolarSensorEntity,
-    InWattsSensorEntity,
+    InRawAmpSolarSensorEntity,
+    InRawVoltSolarSensorEntity,
     InRawWattsSolarSensorEntity,
+    InWattsSensorEntity,
     LevelSensorEntity,
     OutEnergySensorEntity,
     OutVoltDcSensorEntity,
@@ -36,6 +37,7 @@ from custom_components.ecoflow_cloud.sensor import (
     OutWattsSensorEntity,
     QuotaStatusSensorEntity,
     RemainSensorEntity,
+    StateOfHealthSensorEntity,
     TempSensorEntity,
     VoltSensorEntity,
 )
@@ -77,7 +79,7 @@ class DeltaPro3(BaseInternalDevice):
             CapacitySensorEntity(client, self, "bms_design_cap", const.MAIN_DESIGN_CAPACITY, False),
             CapacitySensorEntity(client, self, "bms_full_cap_mah", const.MAIN_FULL_CAPACITY, False),
             CapacitySensorEntity(client, self, "bms_remain_cap_mah", const.MAIN_REMAIN_CAPACITY, False),
-            LevelSensorEntity(client, self, "bms_batt_soh", const.SOH),
+            StateOfHealthSensorEntity(client, self, "bms_batt_soh", const.SOH),
             # Cycles from BMSHeartBeatReport (not DisplayPropertyUpload)
             CyclesSensorEntity(client, self, "cycles", const.CYCLES),
             VoltSensorEntity(client, self, "bms_batt_vol", const.BATTERY_VOLT, False)
@@ -108,10 +110,10 @@ class DeltaPro3(BaseInternalDevice):
             OutVoltDcSensorEntity(client, self, "pow_get_24v_vol", "24V DC Output Voltage"),
             InRawWattsSolarSensorEntity(client, self, "pow_get_pv_h", "Solar High Voltage Input Power"),
             InRawWattsSolarSensorEntity(client, self, "pow_get_pv_l", "Solar Low Voltage Input Power"),
-            InVoltSolarSensorEntity(client, self, "pow_get_pv_h_vol", "Solar HV Input Voltage"),
-            InVoltSolarSensorEntity(client, self, "pow_get_pv_l_vol", "Solar LV Input Voltage"),
-            InMilliampSolarSensorEntity(client, self, "pow_get_pv_h_amp", "Solar HV Input Current"),
-            InMilliampSolarSensorEntity(client, self, "pow_get_pv_l_amp", "Solar LV Input Current"),
+            InRawVoltSolarSensorEntity(client, self, "plug_in_info_pv_h_vol", "Solar HV Input Voltage"),
+            InRawVoltSolarSensorEntity(client, self, "plug_in_info_pv_l_vol", "Solar LV Input Voltage"),
+            InRawAmpSolarSensorEntity(client, self, "plug_in_info_pv_h_amp", "Solar HV Input Current"),
+            InRawAmpSolarSensorEntity(client, self, "plug_in_info_pv_l_amp", "Solar LV Input Current"),
             OutWattsSensorEntity(client, self, "pow_get_qcusb1", const.USB_QC_1_OUT_POWER),
             OutWattsSensorEntity(client, self, "pow_get_qcusb2", const.USB_QC_2_OUT_POWER),
             OutWattsSensorEntity(client, self, "pow_get_typec1", const.TYPEC_1_OUT_POWER),
@@ -126,8 +128,8 @@ class DeltaPro3(BaseInternalDevice):
             # Note: accuChgEnergy and accuDsgEnergy are in Wh, multiply by 0.001 for kWh display
             # These fields do not exist in DisplayPropertyUpload - they come from BMSHeartBeatReport
             # Using camelCase to match upstream pattern (see stream_ac.py)
-            InEnergySensorEntity(client, self, "accuChgEnergy", "Total Charge Energy"),
-            OutEnergySensorEntity(client, self, "accuDsgEnergy", "Total Discharge Energy"),
+            InEnergySensorEntity(client, self, "accu_chg_energy", "Total Charge Energy"),
+            OutEnergySensorEntity(client, self, "accu_dsg_energy", "Total Discharge Energy"),
             # Note: The following fields do not exist in any Delta Pro 3 protobuf messages:
             # - pow_in_sum_energy (Total Input Energy)
             # - pow_out_sum_energy (Total Output Energy)
@@ -369,7 +371,14 @@ class DeltaPro3(BaseInternalDevice):
             # 4. Protobuf message decode
             decoded_data = self._decode_message_by_type(decoded_pdata, header_info)
             if not decoded_data:
-                _LOGGER.warning("Message decoding failed")
+                # Routine: devices interleave frames carrying only fields the
+                # proto doesn't declare (or unknown cmdIds).
+                _LOGGER.debug(
+                    "No known fields in message (cmdFunc=%s, cmdId=%s, %d bytes)",
+                    header_info.get("cmdFunc"),
+                    header_info.get("cmdId"),
+                    len(decoded_pdata),
+                )
                 return {}
 
             # 5. Flatten all fields for params
@@ -576,8 +585,9 @@ class DeltaPro3(BaseInternalDevice):
                     _LOGGER.debug(f"Failed to decode as BMSHeartBeatReport (cmdFunc={cmd_func}, cmdId={cmd_id}): {e}")
                     # Fall through to unknown message type
 
-            # Unknown message type - try BMSHeartBeatReport as fallback
-            _LOGGER.warning(f"Unknown message type: cmdFunc={cmd_func}, cmdId={cmd_id}, size={len(pdata)} bytes")
+            # Unknown message type - try BMSHeartBeatReport as fallback.
+            # Routine app-API chatter (one-off cmdIds).
+            _LOGGER.debug(f"Unknown message type: cmdFunc={cmd_func}, cmdId={cmd_id}, size={len(pdata)} bytes")
 
             # Try to decode as BMSHeartBeatReport since that's a common case
             try:

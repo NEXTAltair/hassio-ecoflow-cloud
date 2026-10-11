@@ -1,17 +1,41 @@
+[tools]
+python = "3.14"
+uv = "latest"
+
 [env]
 _.python.venv = { path = ".venv", create = true }
 
-[tools]
-python = "3.13"
+# Deferred, not accepted: ruff 0.16 defaults the codebase does not satisfy yet.
+# `mise run lint` skips them, `mise run lint:debt` counts them. Delete a code
+# once its violations are fixed and it becomes enforced.
+RUFF_DEFERRED = """\
+UP045,UP007,UP006,UP009,UP030,UP032,UP034,UP035,UP049,\
+RUF010,RUF012,RUF023,RUF046,RUF059,RUF100,\
+BLE001,I001,S110,DTZ005,G201,\
+PERF102,PERF402,SIM102,SIM210,TRY401,\
+C402,C408,PIE790,PLC0414,PLE1206,PYI041,PYI063"""
 
+[hooks]
+postinstall = "uv sync"
+
+[tasks.sync]
+description = "Install/sync Python dependencies with uv"
+run = "uv sync"
 
 [tasks.lint]
 description = "Lint code"
+depends = ["sync"]
 dir = "custom_components"
 run = """
-ruff check .
-mypy .
+uv run ruff check --ignore "$RUFF_DEFERRED" .
+uv run mypy .
 """
+
+[tasks."lint:debt"]
+description = "Report the deferred ruff rules (warnings only, never fails)"
+depends = ["sync"]
+dir = "custom_components"
+run = "uv run ruff check --exit-zero --statistics ."
 
 [tasks.protoc]
 tools.protoc = "32.0"
@@ -20,6 +44,7 @@ run = "protoc --proto_path=. --python_out=. --pyi_out=.  *.proto"
 
 [tasks.gendocs]
 description = "Generate documentation"
+depends = ["sync"]
 dir = "docs"
 env = { PYTHONPATH = ".." }
-run = "python gen.py"
+run = "uv run python gen.py"
