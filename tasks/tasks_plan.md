@@ -1,130 +1,68 @@
-# タスク計画
+# 次の作業
 
-## プロジェクト概要
-EcoFlow Delta Pro 3 デバイスの Home Assistant 統合対応
+更新日: 2026-10-11
 
-## タスクバックログ
+[現在の状況](active_context.md) と [調査索引](../docs/research/README.md) を前提にする。
+旧DP3実装計画の進捗率・期限は [履歴](../docs/research/archive/context/tasks_plan.md) に保存した。
 
-### 完了済みタスク ✅
+## 今回の資料整理
 
-#### フェーズ 1: 調査・仕様策定
-- [x] DP3 仕様調査 (serena/progress/00_00_DP3_仕様調査タスク.md)
-- [x] MQTT トピック構造調査 (serena/progress/00_01_DP3_MQTTトピック構造詳細.md)
-- [x] MQTT メッセージ形式調査 (serena/progress/00_02_DP3_MQTTメッセージ形式詳細.md)
-- [x] DeltaPro/Delta2Max 定義構造調査 (serena/progress/01_00_DeltaPro_Delta2Max_定義構造調査タスク.md)
-- [x] Protobuf 調査 (serena/progress/02_DP3_Protobuf調査タスク.md)
+- [x] 元資料49件を退避して履歴資料へ集約する。
+- [x] 現在の方針・調査索引・次の作業を通常のMarkdownへ整理する。
+- [x] 過去のBMS/cycles/energy/SOH記録を現コードと突き合わせる。
+- [x] Serenaの自動登録・プロセス停止処理を開発スクリプトから外す。
+- [x] 移行内容・リンク・既存差分の保全を確認し、旧Serenaのファイルを削除する。
+- [x] ユーザーによる`serena/`・`.serena/`・`docs_4ai/`の削除を確認する。
+  `tasks/rfc/`は空のまま残っている。資料の移行漏れはなく、今回のSerena撤去は完了。
+- [x] ユーザーが削除したCursorの11ファイルを確認する。
+  汎用指示・旧ツール設定は移植せず、protobuf重複シンボル対策の履歴だけを調査索引へ残す。
 
-#### フェーズ 2: 基盤実装
-- [x] MQTT キャプチャ環境構築 (serena/progress/05_DP3_MQTTキャプチャ環境構築タスク.md)
-- [x] Protobuf スキーマ解析・作成 (serena/progress/06_DP3_Protobufスキーマ解析作成タスク.md)
-- [x] XOR デコード実装 (serena/progress/07_DP3_XORデコード実装タスク.md)
+## 今回: dev専用コンテナの最適化
 
-### 進行中タスク 🔄
+- [x] upstreamのdevcontainer・VS Code・依存定義を基準に、フォーク独自設定を見直す。
+  新たなAIツール導入や独自のPython管理を追加しない。
+- [x] 配布コンテナとHA Core 2026.10.0の不一致を解決する。
+  現在の配布latestはPython 3.13.5／HA 2025.12.4、upstream依存定義はHA 2026.8.0。
+  devではHA公式2026.10.0を使い、検証用Pythonを配布イメージの実測版3.14.6へ合わせる。
+- [x] 認証情報なしの隔離設定と専用volumeを用意する。
+  env-file・EcoFlow自動設定を使わず、HAだけを外向き通信のないネットワークへ置く。
+- [x] コンテナ作成、postCreate、postStart、HA準備完了、停止後の再オープンをCLIで個別に確認する。
+  両サービスのID・volumeを再利用し、依存再導入なし。
+- [x] lint・型検査・接続不要の検証を、採用環境の同じPythonで実行する。
+  現在の入口は `ruff check custom_components` と `mypy custom_components`。
+  `make check`とVS Codeタスクに統一。smoke成功、lint 1,855件・型検査4件を課題として記録。
+  機能コードは変更せず、既存ユーザー差分・保護対象95ファイルの内容を維持する。
+  テスト全体の一括実行は、実接続スクリプトを含めない範囲を確認してから行う。
+- [x] コンテナを起動し、8123の開発HAへ接続できることを確認する。
+  2026-10-11にユーザーが確認済み。
+- [ ] 必要時にVS Code拡張の導入・動作を確認する。
+  コンテナ内で進める。Windowsネイティブ側の環境確認は完了。
+  拡張とVS Code側のReopen操作は個別には未確認。HA接続の確認結果は上記に記録済み。
+- [ ] 次段階で型検査4件のHA互換性を確認する。lintは生成物の扱いとルール範囲をupstreamと照合する。
 
-#### フェーズ 3: デバイス実装
-- [ ] **delta_pro3.py 基本実装** (tasks/rfc/08_DP3_delta_pro3.py実装タスク.md)
-  - 状態: 基本構造完成、エンティティ定義待ち
-  - ブロッカー: なし
+今回の資料整理・環境設定は、2026-10-11のユーザー依頼により`origin/dev`へ
+コミット・pushする。既存のprotoコメント変更は今回のコミットに含めない。
 
-- [ ] **エンティティ定義実装** (tasks/rfc/09_DP3_エンティティ定義実装タスク.md) 🎯 **現在のフォーカス**
-  - 状態: 実装中
-  - 必要なエンティティタイプ:
-    - センサー (バッテリー状態、電力、温度など)
-    - スイッチ (AC 出力、DC 出力など)
-    - ナンバー (充電上限、電力制限など)
-    - セレクト (タイムアウト設定、充電電流など)
-  - ブロッカー: なし
+## 次段階: upstream追従
 
-- [ ] **コマンド送信実装** (tasks/rfc/10_DP3_コマンド送信実装タスク.md)
-  - 状態: 未着手
-  - 依存関係: エンティティ定義実装
-  - ブロッカー: なし
+開発環境・調査資料・コンテキストの変更は`dev`に残す。
+還元用`main`はupstreamに近い状態を保ち、必要な修正だけを個別に選別して移す。
+`dev`全体を`main`へ一括マージしない。
 
-### 未着手タスク 📋
+以下はユーザーから引き継いだ候補。現在のコード・変更内容・適用要否は次段階で再確認する。
+この資料整理ではmerge/rebase/cherry-pickを行っていない。
 
-#### フェーズ 4: テスト・統合
-- [ ] **Home Assistant 統合テスト** (tasks/rfc/12_DP3_Home Assistant統合テストタスク.md)
-  - 依存関係: コマンド送信実装
-  - テスト項目:
-    - エンティティ検出
-    - データ更新
-    - コマンド送信
-    - エラーハンドリング
+- [ ] protobuf固定とHA 2026.10.0の衝突を解消する（upstream v1.7.2の範囲指定が候補）。
+- [ ] [#742](https://github.com/tolwi/hassio-ecoflow-cloud/pull/742): PV/energyキー。
+- [ ] [#799](https://github.com/tolwi/hassio-ecoflow-cloud/pull/799): SOH。
+- [ ] [#850](https://github.com/tolwi/hassio-ecoflow-cloud/pull/850)・
+  [#925](https://github.com/tolwi/hassio-ecoflow-cloud/pull/925): ログ。
 
-- [ ] **実機テスト計画** (tasks/rfc/13_DP3_実機テスト計画タスク.md)
-  - 依存関係: Home Assistant 統合テスト
-  - テスト環境: 実際の Delta Pro 3 デバイス
+## 保留
 
-#### フェーズ 5: リリース準備
-- [ ] **ドキュメント更新** (tasks/rfc/14_DP3_ドキュメント更新タスク.md)
-  - 依存関係: 実機テスト完了
-  - 更新対象:
-    - README.md
-    - デバイスサポート一覧
-    - 設定手順
+- DP3操作系の新規実装・改修、制御関連#904/#921。
+- Public APIの対応・遅延対策。
+- protobuf再生成、本番HA・実機への接続。
 
-- [ ] **リリース準備** (tasks/rfc/15_DP3_リリース準備タスク.md)
-  - 依存関係: 全テスト完了、ドキュメント更新完了
-  - 成果物:
-    - PR 作成 (dev → main)
-    - Upstream PR 準備
-
-### 補足タスク 📝
-
-- [ ] **MQTT 認証フロー調査** (tasks/rfc/11_MQTT_Authentication_Flow.md)
-  - 優先度: 中
-  - 状態: 一部完了、詳細調査継続中
-
-### 設計ドキュメント 📐
-
-- [x] DP3 設計タスク詳細 (tasks/rfc/03_DP3_設計タスク詳細.md)
-- [x] DP3 対応タスク分解 (tasks/rfc/04_DP3対応タスク分解.md)
-
-## プロジェクト進捗
-
-### 全体進捗: 約 60%
-
-- ✅ フェーズ 1: 調査・仕様策定 (100%)
-- ✅ フェーズ 2: 基盤実装 (100%)
-- 🔄 フェーズ 3: デバイス実装 (50%)
-- 📋 フェーズ 4: テスト・統合 (0%)
-- 📋 フェーズ 5: リリース準備 (0%)
-
-### 今後のマイルストーン
-
-1. **エンティティ定義完成** (目標: 今週)
-2. **コマンド送信実装** (目標: 来週)
-3. **Home Assistant 統合テスト** (目標: 2 週間後)
-4. **実機テスト** (目標: 3 週間後)
-5. **リリース準備** (目標: 1 ヶ月後)
-
-## 既知の課題
-
-### 技術的課題
-1. MQTT 認証フローの一部詳細が不明
-   - 影響: 軽微 (既存実装で動作確認済み)
-   - 対応: 必要に応じて追加調査
-
-2. 一部エンティティの単位変換が必要
-   - 影響: 軽微 (実装済み)
-   - 対応: 単位変換関数実装済み
-
-### リスク管理
-- **リスク**: 実機テスト環境がない場合の対応
-  - **軽減策**: MQTT キャプチャデータでの検証を徹底
-  - **代替案**: コミュニティでのテスター募集
-
-## 参照資料
-
-### 仕様書
-- [製品要求仕様書](../docs_4ai/product_requirement_docs.md)
-- [技術仕様書](../docs_4ai/technical.md)
-- [アーキテクチャ設計](../docs_4ai/architecture.md)
-
-### 実装仕様
-- [エンティティ仕様](../docs_4ai/dp3_entity_specification.md)
-- [cmdId/cmdFunc マッピング](../docs_4ai/cmd_id_func_mapping.md)
-
-### 調査記録
-- [調査記録一覧](../serena/investigations/)
-- [進行記録一覧](../serena/progress/)
+欠落している `mock_protobuf_data` を参照する旧テストや、保存データを出力する研究スクリプトは
+そのまま検証入口に採用しない。必要性と匿名化した入力を確認してから扱う。
