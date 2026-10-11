@@ -37,8 +37,9 @@
 - devの機能コミット: `daa5e0bbaa3284c90bb3761a72ba7ca154a4bbb8`。
 - mainの個別移植コミット: `f4cf2fd88dc5784378bee3ab362c29d289384f2e`。
   dev全体のmergeは行っていない。取り込み元と著者はコミット本文に記録した。
-- 公開済みの基点はmain `1d7899e`、dev `a8d9b9c`。
-  今回の機能コミットと調査記録のコミットはローカルのみで、pushしていない。
+- 取り込み時点の公開基点はmain `1d7899e`、dev `a8d9b9c`だった。
+  続く2026-10-11の明示依頼で、main `f4cf2fd`とdev `d56c231`をatomicで通常pushした。
+  両枝のリモートHEADとローカルの一致を確認済み。整理資料はdevの追加文書コミットで公開する。
 - 取り込み前の未コミットIssue調査・文書5件・patch・main/dev参照は
   `.git/codex-backups/upstream-prs-20261011-111924/`に保存した。
 
@@ -51,6 +52,8 @@
   出力ON/OFFのゼロ値の保持、未対応操作の無送信、AC充電範囲、診断表示、未知フィールドを確認した。
 - 既存smokeは成功。Python構文93ファイル、generated protobuf 12件、隔離設定と版を確認した。
 - 型検査は92ソースファイルで成功。回帰テストのlintも成功した。
+- push後のmainの[Lint workflow](https://github.com/NEXTAltair/hassio-ecoflow-cloud/actions/runs/38137670597)も成功した。
+  回帰テスト11件は手動実行で、現在の`make check`とCIには未組み込み。
 - mainの分離worktreeで、upstreamの保留ルールを使った全体lintが成功した。
   mainの2ファイルが検証済みdevとbyte単位で一致し、mainの差分に開発資料がないことを確認した。
 - `/workspace`では既存の空の`custom_components/__init__.py`と
@@ -68,4 +71,5 @@
 #2は送信経路を修正したが、未対応2操作と実機検証が残るため完了とは判定しない。
 Issue #1/#2は開いたままとし、実機検証は別の明示依頼まで行わない。
 
+残る不足・環境問題・検証待ちは[現在の残課題](current_problems_20261011.md)へ整理した。
 次の作業は[タスク計画](../../tasks/tasks_plan.md)で管理する。

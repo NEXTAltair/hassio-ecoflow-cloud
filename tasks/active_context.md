@@ -19,11 +19,11 @@
 ## ブランチと移行内容
 
 - 作業ブランチ: 作り直した`dev`。基点は`main`の`1d7899e`。
-  `a8d9b9c`まで`origin/dev`へ公開し、trackingを設定した。
-  先行修正`daa5e0b`と今回の文書更新はローカルのみ。
+  先行修正`daa5e0b`と取り込み記録`d56c231`まで`origin/dev`へ公開済み。
+  今回の残課題整理もdevの文書コミットとして公開する。
 - `main`は`upstream/main`のv1.7.2（`de02d68`）を取り込み済み。
   基点の`1d7899e`はupstreamと同じツリー。現在は`f4cf2fd`で先行修正を個別に移植した。
-  upstreamとの差はDP3ソースと回帰テストの2ファイルのみ。今回の更新は未push。
+  upstreamとの差はDP3ソースと回帰テストの2ファイルのみ。`origin/main`へ公開済み。
 - 旧`dev`は`archive/dev-20261011`（`f786cad`）へ保存した。
   旧HEAD `ccdd092`に、未コミットだったmain追従の記録と今回の計画をコミットした状態。
   `origin/archive/dev-20261011`にも同じ旧履歴を公開して保存した。
@@ -31,6 +31,8 @@
   旧履歴の保存と両枝の更新をatomicで反映し、`dev`だけに旧HEADを指定した
   `--force-with-lease`を使った。両枝と保存用ブランチのリモートHEADを確認済み。
   `main`は`origin/main`を、保存用ブランチは同名のリモート枝を追跡する。
+- 続く明示依頼で、先行修正後のmain `f4cf2fd`とdev `d56c231`を通常pushでatomicに公開した。
+  履歴を書き換えず、両枝のリモートHEADとローカルの一致を確認した。
 - 旧`dev`と以前の`main`（`f1ca609`）の統合コード差分はprotoコメント1行だけだった。
   新しい`dev`の統合コードは最新`main`を使い、そのコメント変更（元コミット`ccdd092`）を移植した。
 - 移行したのは隔離コンテナ・エディター設定・Markdown資料・protoコメント。
@@ -56,11 +58,14 @@
 ## 今回の検証
 
 - DP3の先行修正は11件の回帰テストで成功。13操作のProtobuf送信とJSON受信を合成値で確認した。
+  11件は手動実行で、`make check`・CIにはまだ組み込まれていない。
 - smoke成功: Python 93ファイルの構文、生成済みprotobuf 12件の単独ロード、隔離設定と版。
   型検査はupstreamの除外設定で92ソースファイルを確認し成功した。
 - 全体lintはGit記録どおりの権限で展開した分離worktreeで成功。
   `/workspace`では既存の空の`__init__.py` 2件の実行ビットによりEXE002が出る。
   Git記録は非実行だが、この環境ではchmodできなかった。詳細は[取り込み記録](../docs/research/upstream_prs_20261011.md)。
+- push後のmainの[GitHub Actions Lint](https://github.com/NEXTAltair/hassio-ecoflow-cloud/actions/runs/38137670597)は成功した。
+  hassfest/HACS validationの成功は今回確認していない。
 - 旧環境で報告したlint 1,855件・型検査4件は、この最新コード・設定では再現しなかった。
   機能コードや検査ルールへ独自の修正を加えて解消したものではない。
 - 本番HA・実機・EcoFlowへの接続、HAへの統合セットアップ、VS CodeのReopen操作は今回未検証。
@@ -74,6 +79,17 @@
 - #2は13操作をProtobuf送信へ先行修正した。24V出力・AC出力種別の送信は無効で、実機動作は未確認。
   関連upstream #904/#921/#925は確認時点でopen・未マージ。
   根拠は[取り込み前の確認](../docs/research/fork_issues_20261011.md)と[取り込み記録](../docs/research/upstream_prs_20261011.md)。
+
+## 現在の残課題
+
+[優先順位と根拠](../docs/research/current_problems_20261011.md)に、確認済みの不足と検証待ちを分けて整理した。
+
+- P1: 操作のACK・失敗時の扱いと、#1のタイマー消失の再発確認。
+  送信前の目標状態更新があり、画面の変化だけで成功を判断できない。
+- P2: 未対応2操作、energy/SOH/cyclesの経路・単位、回帰テストの自動実行、
+  workspaceの実行ビットによるlint失敗、識別情報・受信値を含むログ出力。
+- 次は検証入口の整備と合成入力での状態更新経路の確認を優先する。
+  追加の機能改修・実機操作は今回行っていない。
 
 ## 保護対象と資料
 
