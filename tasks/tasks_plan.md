@@ -43,6 +43,41 @@
 今回の資料整理・環境設定は、2026-10-11のユーザー依頼により`origin/dev`へ
 コミット・pushする。既存のprotoコメント変更は今回のコミットに含めない。
 
+## 今回: mainをupstream/mainへ追従
+
+2026-10-11のユーザー依頼。`us`は登録リモート名`upstream`として扱う。
+
+- [x] `upstream/main`と`origin/main`をfetchし、ローカル`main`との履歴差を確認する。
+- [x] `dev`の作業ツリーから分離したworktreeで、既存のmain側の変更を保って取り込む。
+- [x] 競合・取り込み結果・`dev`の保全を確認して結果を記録する。
+
+取り込み結果: ローカル`main`を`origin/main`の`75867b4`までfast-forwardし、
+`upstream/main`の`de02d68`（v1.7.2）をマージした。マージコミットは`1d7899e`。
+競合はなく、確定したツリーは`upstream/main`と完全一致する。
+両リモートの履歴を保持し、`origin/main`との差は108コミット先行・遅れなし。
+署名鍵が利用できないため、マージコミットだけ署名なしで作成した。pushは行っていない。
+
+検証: 外部接続なしでPython 93ファイルの構文・JSON 9ファイルの解析が成功。
+manifestの版は1.7.2、protobufの要件は`>=6.32.0,<8`。
+`git diff --check`の空白警告16件はupstream由来で、取り込み後に独自の修正は加えていない。
+`dev`のHEADは`ccdd092`のまま。開発環境・調査資料・protoコメントのコミットはmainへ移していない。
+
+## 今回: devを最新mainから作り直す
+
+2026-10-11のユーザー依頼。旧`dev`の履歴を保存し、最新`main`を基点に
+必要な開発設定・Markdown資料・protoコメントだけを移す。
+旧`dev`と以前の`main`（`f1ca609`）の統合コード差分はprotoコメント1行のみと確認した。
+
+- [ ] 未コミットの記録と移行元ファイルを退避し、保護対象のハッシュを記録する。
+- [ ] 旧`dev`の記録をコミットし、`archive/dev-20261011`へ保存する。
+- [ ] 分離したworktreeで`main`基点の新しい開発ブランチを作る。
+- [ ] 隔離コンテナ・エディター設定・Markdown資料・protoコメントを選別して移す。
+  upstreamの依存定義・lock・検査ルールは維持し、旧AI設定と実接続スクリプトは保存用ブランチに残す。
+- [ ] 外部接続なしの検証と、mainの保全・差分範囲・保護対象の不変を確認する。
+- [ ] 新しいブランチを`dev`にし、移行結果と次の確認事項を記録する。
+
+ローカルの履歴整理のみ。push・コンテナ再作成・依存導入・実機操作は行わない。
+
 ## 次段階: upstream追従
 
 開発環境・調査資料・コンテキストの変更は`dev`に残す。
@@ -52,7 +87,8 @@
 以下はユーザーから引き継いだ候補。現在のコード・変更内容・適用要否は次段階で再確認する。
 この資料整理ではmerge/rebase/cherry-pickを行っていない。
 
-- [ ] protobuf固定とHA 2026.10.0の衝突を解消する（upstream v1.7.2の範囲指定が候補）。
+- [ ] `dev`側のprotobuf固定とHA 2026.10.0の衝突を解消する。
+  `main`にはupstream v1.7.2の範囲指定を取り込み済み。`dev`への適用は別途行う。
 - [ ] [#742](https://github.com/tolwi/hassio-ecoflow-cloud/pull/742): PV/energyキー。
 - [ ] [#799](https://github.com/tolwi/hassio-ecoflow-cloud/pull/799): SOH。
 - [ ] [#850](https://github.com/tolwi/hassio-ecoflow-cloud/pull/850)・

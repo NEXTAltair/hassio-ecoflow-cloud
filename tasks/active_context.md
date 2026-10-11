@@ -17,12 +17,18 @@ upstream追従の前に、過去の調査・判断・未確認事項を参照し
 
 ## リポジトリと保全対象
 
-- 作業ブランチ: `dev`、tracking: `origin/dev`。監査時HEAD: `d1a5f7a`。
+- 作業ブランチ: `dev`、tracking: `origin/dev`。現在のHEAD: `ccdd092`（未push）。
+  資料整理開始時の監査HEADは`d1a5f7a`。
 - `origin`: NEXTAltair/hassio-ecoflow-cloud、`upstream`: tolwi/hassio-ecoflow-cloud。
-- ユーザーの既存差分: `.cursor/` の11ファイル削除と
+- 2026-10-11のユーザー依頼で、ローカル`main`へ`origin/main`の既存更新と
+  `upstream/main`のv1.7.2（`de02d68`）を取り込んだ。マージコミットは`1d7899e`、未push。
+  ツリーはupstreamと完全一致する。詳細は[タスク計画](tasks_plan.md)を参照。
+  `dev`の統合コード・開発環境への取り込みは行っていない。
+- 資料整理開始時のユーザー差分: `.cursor/` の11ファイル削除と
   `custom_components/ecoflow_cloud/devices/internal/proto/ef_dp3_iobroker.proto` のコメント変更。
   Cursorの削除はユーザーが意図した整理として確認済み。今回の資料整理に含める。
-  protoのコメント変更は既存ユーザー変更としてそのまま保持する。
+  protoのコメント変更は資料整理から除外し、その後のユーザー依頼で
+  `ccdd092`として`dev`へ別コミットした（未push）。
 - 今回の資料整理・環境設定は、2026-10-11のユーザー依頼により`origin/dev`へ
   コミット・pushする。既存のprotoコメント変更は今回のコミットに含めない。
 - `core/config/`、`scripts/config.json`、`test/test.env`、既存`.venv`は保護対象。
