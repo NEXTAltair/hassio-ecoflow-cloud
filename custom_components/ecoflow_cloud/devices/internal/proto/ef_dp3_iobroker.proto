@@ -561,7 +561,7 @@ message DP3SendHeaderMsgLegacy
 // BMS Heartbeat Report - Battery Management System heartbeat data
 // Contains cycles, energy accumulation, and detailed battery status
 // Source: ioBroker.ecoflow-mqtt implementation
-// Note: cmdFunc/cmdId mapping TBD - needs verification from actual MQTT logs
+// Note: cmdFunc=32, cmdId=50 per ioBroker.ecoflow-mqtt mapping
 message DP3BMSHeartBeatReport {
   optional uint32 num = 1;                      // Battery pack number (0/1/2 for main/slave1/slave2)
   optional uint32 type = 2;                     // Battery type
