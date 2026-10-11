@@ -1,0 +1,15 @@
+homeassistant:
+  name: EcoFlow Development
+  time_zone: Asia/Tokyo
+  country: JP
+
+http:
+frontend:
+config:
+history:
+logbook:
+recorder:
+logger:
+  default: warning
+
+# No default_config, discovery, MQTT, EcoFlow credentials or device entries.

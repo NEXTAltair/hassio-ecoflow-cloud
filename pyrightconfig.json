@@ -10,10 +10,10 @@
     ".venv",
     "venv"
   ],
-  "venvPath": ".",
-  "venv": ".venv",
-  "pythonVersion": "3.13",
-  "typeCheckingMode": "basic",
+  "venvPath": "/home/vscode/.local",
+  "venv": "ha-venv",
+  "pythonVersion": "3.14",
+  "typeCheckingMode": "off",
   "useLibraryCodeForTypes": true,
   "reportMissingImports": true,
   "reportMissingTypeStubs": false

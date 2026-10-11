@@ -1,7 +1,14 @@
 # Git attributes for hassio-ecoflow-cloud
 
-# Prevent dev-specific customizations from overwriting main branch during merges
-# When merging dev -> main, keep main's version of these files
+# Legacy merge driver hints; these do not guarantee branch isolation.
+# Keep dev-only changes out of main by selecting changes separately (see AGENTS.md).
 .devcontainer/devcontainer.json merge=ours
 .devcontainer/post-start.sh merge=ours
 .gitignore merge=ours
+
+# Windows checkout must preserve Linux script/config line endings.
+*.sh text eol=lf
+.devcontainer/Dockerfile text eol=lf
+.devcontainer/*.yaml text eol=lf
+.devcontainer/ha-config/*.yaml text eol=lf
+.devcontainer/requirements.* text eol=lf

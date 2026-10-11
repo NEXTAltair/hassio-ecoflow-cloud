@@ -10,5 +10,8 @@
   "pylint.args": [
     "--disable=C0114,C0115,C0116"
   ],
-  "ruff.lineLength": 130
+  "python.defaultInterpreterPath": "/home/vscode/.local/ha-venv/bin/python",
+  "python.analysis.typeCheckingMode": "off",
+  "ruff.importStrategy": "fromEnvironment",
+  "mypy-type-checker.importStrategy": "fromEnvironment"
 }

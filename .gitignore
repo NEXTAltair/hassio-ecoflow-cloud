@@ -12,3 +12,7 @@ test/test.env
 
 # Exclude Home Assistant core repository
 core/
+
+# Local environments and optional development credentials.
+/.venv/
+/.devcontainer/.env
